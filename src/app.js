@@ -1,3 +1,5 @@
+const STORAGE_KEY = 'trakk-v0-2-state';
+
 const sampleClub = {
   id: 'club_001',
   name: '4D Dance',
@@ -6,18 +8,16 @@ const sampleClub = {
   timezone: 'Australia/Adelaide'
 };
 
-const sampleMembers = [
+const initialMembers = [
   {
     id: 'member_001',
     clubId: 'club_001',
     firstName: 'Jane',
     lastName: 'Smith',
-    email: 'jane@example.com',
-    phone: '0400 000 000',
     status: 'active',
-    joinDate: '2026-07-06',
-    pricingPlanId: 'plan_8_pass',
+    pricingLabel: '8 Class Pass',
     sessionBalance: 7,
+    memberType: 'member',
     notes: 'Regular Monday attendee.'
   },
   {
@@ -25,12 +25,10 @@ const sampleMembers = [
     clubId: 'club_001',
     firstName: 'Alex',
     lastName: 'Brown',
-    email: 'alex@example.com',
-    phone: '0400 000 001',
     status: 'trial',
-    joinDate: '2026-07-06',
-    pricingPlanId: 'plan_trial',
+    pricingLabel: 'Free Trial',
     sessionBalance: 1,
+    memberType: 'trial',
     notes: 'First night free.'
   },
   {
@@ -38,51 +36,179 @@ const sampleMembers = [
     clubId: 'club_001',
     firstName: 'Morgan',
     lastName: 'Lee',
-    email: 'morgan@example.com',
-    phone: '0400 000 002',
     status: 'active',
-    joinDate: '2026-06-01',
-    pricingPlanId: 'plan_casual',
+    pricingLabel: 'Casual',
     sessionBalance: 0,
+    memberType: 'member',
     notes: 'Pays casually.'
+  },
+  {
+    id: 'member_004',
+    clubId: 'club_001',
+    firstName: 'Sam',
+    lastName: 'Taylor',
+    status: 'active',
+    pricingLabel: 'Term Pass',
+    sessionBalance: 5,
+    memberType: 'member',
+    notes: 'Often attends Level 2.'
+  },
+  {
+    id: 'member_005',
+    clubId: 'club_001',
+    firstName: 'Riley',
+    lastName: 'Chen',
+    status: 'active',
+    pricingLabel: 'Private Lessons',
+    sessionBalance: 3,
+    memberType: 'member',
+    notes: 'Private lesson package.'
+  },
+  {
+    id: 'member_006',
+    clubId: 'club_001',
+    firstName: 'Casey',
+    lastName: 'Nguyen',
+    status: 'staff',
+    pricingLabel: 'Staff / Volunteer',
+    sessionBalance: null,
+    memberType: 'staff',
+    notes: 'Volunteer helper.'
   }
 ];
 
-const sampleSessions = [
+const initialSessions = [
   {
     id: 'session_001',
     clubId: 'club_001',
     title: 'Monday Beginners Class',
-    sessionType: 'group_class',
+    sessionType: 'Group class',
     startDateTime: '2026-07-06T19:30:00+09:30',
     endDateTime: '2026-07-06T21:30:00+09:30',
     instructor: 'John',
     location: 'Mitcham Cultural Centre',
     capacity: 40,
     notes: 'Beginners and Level 2 classes.'
+  },
+  {
+    id: 'session_002',
+    clubId: 'club_001',
+    title: 'Tuesday Private Lessons',
+    sessionType: 'Private lessons',
+    startDateTime: '2026-07-07T18:00:00+09:30',
+    endDateTime: '2026-07-07T21:00:00+09:30',
+    instructor: 'John',
+    location: 'Studio Room',
+    capacity: 6,
+    notes: 'Private lesson block.'
+  },
+  {
+    id: 'session_003',
+    clubId: 'club_001',
+    title: 'Sunday Social',
+    sessionType: 'Social event',
+    startDateTime: '2026-07-12T19:00:00+09:30',
+    endDateTime: '2026-07-12T23:00:00+09:30',
+    instructor: 'Team',
+    location: 'Marion Hotel',
+    capacity: 100,
+    notes: 'Monthly social dance.'
   }
 ];
 
-const attendanceRecords = [];
+const paymentOptions = [
+  { id: 'paid_casual', label: 'Paid' },
+  { id: 'pass_used', label: 'Pass' },
+  { id: 'free_trial', label: 'Trial' },
+  { id: 'complimentary', label: 'Free' },
+  { id: 'private_lesson', label: 'Private' },
+  { id: 'staff_volunteer', label: 'Staff' }
+];
+
+let state = loadState();
+
+function createInitialState() {
+  return {
+    selectedSessionId: initialSessions[0].id,
+    members: initialMembers,
+    sessions: initialSessions,
+    attendanceRecords: []
+  };
+}
+
+function loadState() {
+  const savedState = localStorage.getItem(STORAGE_KEY);
+
+  if (!savedState) {
+    return createInitialState();
+  }
+
+  try {
+    const parsedState = JSON.parse(savedState);
+
+    return {
+      ...createInitialState(),
+      ...parsedState,
+      members: parsedState.members || initialMembers,
+      sessions: parsedState.sessions || initialSessions,
+      attendanceRecords: parsedState.attendanceRecords || []
+    };
+  } catch (error) {
+    console.warn('Unable to load saved Trakk state. Starting fresh.', error);
+    return createInitialState();
+  }
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
 
 function formatMemberName(member) {
   return `${member.firstName} ${member.lastName}`;
 }
 
-function recordAttendance(memberId, paymentStatus) {
-  const session = sampleSessions[0];
+function getSelectedSession() {
+  return state.sessions.find(session => session.id === state.selectedSessionId) || state.sessions[0];
+}
 
-  const existingRecord = attendanceRecords.find(
+function getAttendanceForSelectedSession() {
+  const session = getSelectedSession();
+  return state.attendanceRecords.filter(record => record.sessionId === session.id);
+}
+
+function getRecordForMember(memberId) {
+  const session = getSelectedSession();
+  return state.attendanceRecords.find(
     record => record.memberId === memberId && record.sessionId === session.id
   );
+}
+
+function formatPaymentStatus(status) {
+  const option = paymentOptions.find(item => item.id === status);
+  return option ? option.label : status;
+}
+
+function formatSessionDate(dateTime) {
+  return new Date(dateTime).toLocaleString('en-AU', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+}
+
+function recordAttendance(memberId, paymentStatus) {
+  const session = getSelectedSession();
+  const existingRecord = getRecordForMember(memberId);
 
   if (existingRecord) {
     existingRecord.paymentStatus = paymentStatus;
     existingRecord.attendanceStatus = 'present';
     existingRecord.recordedAt = new Date().toISOString();
   } else {
-    attendanceRecords.push({
-      id: `attendance_${attendanceRecords.length + 1}`,
+    state.attendanceRecords.push({
+      id: `attendance_${Date.now()}`,
       clubId: sampleClub.id,
       sessionId: session.id,
       memberId,
@@ -93,82 +219,199 @@ function recordAttendance(memberId, paymentStatus) {
     });
   }
 
+  saveState();
   render();
 }
 
-function getRecordForMember(memberId) {
-  const session = sampleSessions[0];
-  return attendanceRecords.find(
-    record => record.memberId === memberId && record.sessionId === session.id
+function removeAttendance(memberId) {
+  const session = getSelectedSession();
+  state.attendanceRecords = state.attendanceRecords.filter(
+    record => !(record.memberId === memberId && record.sessionId === session.id)
   );
+
+  saveState();
+  render();
 }
 
-function formatPaymentStatus(status) {
-  const labels = {
-    paid_casual: 'Paid casual',
-    pass_used: 'Pass used',
-    free_trial: 'Free trial',
-    complimentary: 'Complimentary'
+function addWalkIn(event) {
+  event.preventDefault();
+  const form = event.target;
+  const nameInput = form.elements.walkInName;
+  const name = nameInput.value.trim();
+
+  if (!name) {
+    nameInput.focus();
+    return;
+  }
+
+  const [firstName, ...lastNameParts] = name.split(' ');
+  const member = {
+    id: `walkin_${Date.now()}`,
+    clubId: sampleClub.id,
+    firstName,
+    lastName: lastNameParts.join(' ') || 'Walk-in',
+    status: 'walk-in',
+    pricingLabel: 'Walk-in',
+    sessionBalance: 0,
+    memberType: 'walk-in',
+    notes: 'Added during attendance check-in.'
   };
 
-  return labels[status] || status;
+  state.members.push(member);
+  recordAttendance(member.id, form.elements.walkInPayment.value);
+  form.reset();
+}
+
+function resetSelectedSession() {
+  const session = getSelectedSession();
+  state.attendanceRecords = state.attendanceRecords.filter(
+    record => record.sessionId !== session.id
+  );
+
+  saveState();
+  render();
+}
+
+function getSummary() {
+  const records = getAttendanceForSelectedSession();
+  return paymentOptions.reduce((summary, option) => {
+    summary[option.id] = records.filter(record => record.paymentStatus === option.id).length;
+    return summary;
+  }, { total: records.length });
+}
+
+function renderSummaryCards(summary) {
+  return `
+    <div class="summary-grid">
+      <div class="summary-card hero-summary">
+        <span class="summary-number">${summary.total}</span>
+        <span class="summary-label">Present</span>
+      </div>
+      ${paymentOptions.map(option => `
+        <div class="summary-card compact-summary">
+          <span class="summary-number">${summary[option.id]}</span>
+          <span class="summary-label">${option.label}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderSessionSelector() {
+  return `
+    <label class="field-label" for="session-select">Session</label>
+    <select id="session-select">
+      ${state.sessions.map(session => `
+        <option value="${session.id}" ${session.id === state.selectedSessionId ? 'selected' : ''}>
+          ${session.title} — ${formatSessionDate(session.startDateTime)}
+        </option>
+      `).join('')}
+    </select>
+  `;
+}
+
+function renderWalkInForm() {
+  return `
+    <form class="walk-in-form" id="walk-in-form">
+      <div>
+        <label class="field-label" for="walkInName">Add walk-in</label>
+        <input id="walkInName" name="walkInName" type="text" placeholder="Name" autocomplete="off" />
+      </div>
+      <div>
+        <label class="field-label" for="walkInPayment">Type</label>
+        <select id="walkInPayment" name="walkInPayment">
+          ${paymentOptions.map(option => `<option value="${option.id}">${option.label}</option>`).join('')}
+        </select>
+      </div>
+      <button type="submit">Add & check in</button>
+    </form>
+  `;
+}
+
+function renderMemberCard(member) {
+  const record = getRecordForMember(member.id);
+  const isPresent = Boolean(record);
+  const balanceLabel = member.sessionBalance === null ? 'unlimited' : `${member.sessionBalance} sessions left`;
+
+  return `
+    <article class="member-card ${isPresent ? 'is-present' : ''}">
+      <div class="member-info">
+        <h3>${formatMemberName(member)}</h3>
+        <p>${member.status} · ${member.pricingLabel} · ${balanceLabel}</p>
+        ${record ? `<p class="record-status">Marked: ${formatPaymentStatus(record.paymentStatus)}</p>` : ''}
+      </div>
+      <div class="actions">
+        ${paymentOptions.map(option => `
+          <button
+            class="${record && record.paymentStatus === option.id ? 'selected-action' : ''}"
+            data-action="record"
+            data-member-id="${member.id}"
+            data-payment-status="${option.id}"
+          >${option.label}</button>
+        `).join('')}
+        ${record ? `<button class="secondary-button" data-action="remove" data-member-id="${member.id}">Undo</button>` : ''}
+      </div>
+    </article>
+  `;
 }
 
 function render() {
   const app = document.querySelector('#app');
-  const session = sampleSessions[0];
-  const presentCount = attendanceRecords.filter(
-    record => record.attendanceStatus === 'present'
-  ).length;
+  const session = getSelectedSession();
+  const summary = getSummary();
 
   app.innerHTML = `
     <header class="app-header">
       <div>
         <p class="eyebrow">${sampleClub.name}</p>
         <h1>Trakk Attendance</h1>
-      </div>
-      <div class="summary-card">
-        <span class="summary-number">${presentCount}</span>
-        <span class="summary-label">Present</span>
+        <p class="version-label">v0.2.0 Real Attendance Flow</p>
       </div>
     </header>
 
+    ${renderSummaryCards(summary)}
+
     <section class="session-card">
-      <h2>${session.title}</h2>
-      <p>${session.startDateTime}</p>
-      <p>${session.location}</p>
+      ${renderSessionSelector()}
+      <div class="session-details">
+        <h2>${session.title}</h2>
+        <p>${session.sessionType} · ${formatSessionDate(session.startDateTime)}</p>
+        <p>${session.location} · Instructor: ${session.instructor} · Capacity: ${session.capacity}</p>
+        <p>${session.notes}</p>
+      </div>
+      <button class="secondary-button danger-button" id="reset-session">Clear this session</button>
+    </section>
+
+    <section class="walk-in-card">
+      ${renderWalkInForm()}
     </section>
 
     <section class="member-list">
-      ${sampleMembers.map(member => {
-        const record = getRecordForMember(member.id);
-        const isPresent = Boolean(record);
-
-        return `
-          <article class="member-card ${isPresent ? 'is-present' : ''}">
-            <div class="member-info">
-              <h3>${formatMemberName(member)}</h3>
-              <p>${member.status} · ${member.sessionBalance} sessions left</p>
-              ${record ? `<p class="record-status">Marked: ${formatPaymentStatus(record.paymentStatus)}</p>` : ''}
-            </div>
-            <div class="actions">
-              <button data-member-id="${member.id}" data-payment-status="paid_casual">Paid</button>
-              <button data-member-id="${member.id}" data-payment-status="pass_used">Pass</button>
-              <button data-member-id="${member.id}" data-payment-status="free_trial">Trial</button>
-              <button data-member-id="${member.id}" data-payment-status="complimentary">Free</button>
-            </div>
-          </article>
-        `;
-      }).join('')}
+      ${state.members.map(renderMemberCard).join('')}
     </section>
   `;
 
-  document.querySelectorAll('button[data-member-id]').forEach(button => {
+  document.querySelector('#session-select').addEventListener('change', event => {
+    state.selectedSessionId = event.target.value;
+    saveState();
+    render();
+  });
+
+  document.querySelector('#walk-in-form').addEventListener('submit', addWalkIn);
+  document.querySelector('#reset-session').addEventListener('click', resetSelectedSession);
+
+  document.querySelectorAll('[data-action="record"]').forEach(button => {
     button.addEventListener('click', event => {
       recordAttendance(
         event.target.dataset.memberId,
         event.target.dataset.paymentStatus
       );
+    });
+  });
+
+  document.querySelectorAll('[data-action="remove"]').forEach(button => {
+    button.addEventListener('click', event => {
+      removeAttendance(event.target.dataset.memberId);
     });
   });
 }
