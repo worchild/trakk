@@ -1,8 +1,67 @@
-import {
-  sampleClub,
-  sampleMembers,
-  sampleSessions
-} from './data/sample-data.js';
+const sampleClub = {
+  id: 'club_001',
+  name: '4D Dance',
+  clubType: 'dance_school',
+  defaultCurrency: 'AUD',
+  timezone: 'Australia/Adelaide'
+};
+
+const sampleMembers = [
+  {
+    id: 'member_001',
+    clubId: 'club_001',
+    firstName: 'Jane',
+    lastName: 'Smith',
+    email: 'jane@example.com',
+    phone: '0400 000 000',
+    status: 'active',
+    joinDate: '2026-07-06',
+    pricingPlanId: 'plan_8_pass',
+    sessionBalance: 7,
+    notes: 'Regular Monday attendee.'
+  },
+  {
+    id: 'member_002',
+    clubId: 'club_001',
+    firstName: 'Alex',
+    lastName: 'Brown',
+    email: 'alex@example.com',
+    phone: '0400 000 001',
+    status: 'trial',
+    joinDate: '2026-07-06',
+    pricingPlanId: 'plan_trial',
+    sessionBalance: 1,
+    notes: 'First night free.'
+  },
+  {
+    id: 'member_003',
+    clubId: 'club_001',
+    firstName: 'Morgan',
+    lastName: 'Lee',
+    email: 'morgan@example.com',
+    phone: '0400 000 002',
+    status: 'active',
+    joinDate: '2026-06-01',
+    pricingPlanId: 'plan_casual',
+    sessionBalance: 0,
+    notes: 'Pays casually.'
+  }
+];
+
+const sampleSessions = [
+  {
+    id: 'session_001',
+    clubId: 'club_001',
+    title: 'Monday Beginners Class',
+    sessionType: 'group_class',
+    startDateTime: '2026-07-06T19:30:00+09:30',
+    endDateTime: '2026-07-06T21:30:00+09:30',
+    instructor: 'John',
+    location: 'Mitcham Cultural Centre',
+    capacity: 40,
+    notes: 'Beginners and Level 2 classes.'
+  }
+];
 
 const attendanceRecords = [];
 
@@ -44,6 +103,17 @@ function getRecordForMember(memberId) {
   );
 }
 
+function formatPaymentStatus(status) {
+  const labels = {
+    paid_casual: 'Paid casual',
+    pass_used: 'Pass used',
+    free_trial: 'Free trial',
+    complimentary: 'Complimentary'
+  };
+
+  return labels[status] || status;
+}
+
 function render() {
   const app = document.querySelector('#app');
   const session = sampleSessions[0];
@@ -79,7 +149,7 @@ function render() {
             <div class="member-info">
               <h3>${formatMemberName(member)}</h3>
               <p>${member.status} · ${member.sessionBalance} sessions left</p>
-              ${record ? `<p class="record-status">Marked: ${record.paymentStatus}</p>` : ''}
+              ${record ? `<p class="record-status">Marked: ${formatPaymentStatus(record.paymentStatus)}</p>` : ''}
             </div>
             <div class="actions">
               <button data-member-id="${member.id}" data-payment-status="paid_casual">Paid</button>
