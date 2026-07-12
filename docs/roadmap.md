@@ -2,7 +2,7 @@
 
 ## Phase 0: Project foundation
 
-Status: In progress
+Status: Complete
 
 Goals:
 
@@ -15,6 +15,8 @@ Goals:
 - Add starter app skeleton
 
 ## Phase 1: Static MVP prototype
+
+Status: Complete in v0.2.0
 
 Goal: Build a simple browser-based prototype using local sample data.
 
@@ -36,6 +38,8 @@ Success criteria:
 - Attendance totals update immediately
 
 ## Phase 2: Data structure and persistence
+
+Status: In progress — browser persistence, member creation, and JSON backup delivered in v0.3.0
 
 Goal: Move from hardcoded sample data to structured local storage.
 
@@ -95,6 +99,6 @@ Possible features:
 
 ## Initial version target
 
-Version `0.1.0` should be a working static prototype that proves the key workflow:
+Version `0.3.0` is the current working static release and proves the key workflow:
 
 > Pick a session → mark attendance → record payment/session type → view simple totals.

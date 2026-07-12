@@ -87,6 +87,7 @@ h1 {
 .summary-card,
 .session-card,
 .walk-in-card,
+.member-tools-card,
 .member-card {
   background: #fff;
   border-radius: 1rem;
@@ -135,9 +136,46 @@ h1 {
 }
 
 .session-card,
-.walk-in-card {
+.walk-in-card,
+.member-tools-card {
   padding: 1rem;
   margin-bottom: 1rem;
+}
+
+.data-actions,
+.add-member-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.button-label {
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #e5e8e8;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.member-tools-card > div {
+  margin-bottom: 0.85rem;
+}
+
+.add-member-form > * {
+  flex: 1 1 150px;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
 }
 
 .session-details {
@@ -220,6 +258,11 @@ h1 {
 
   .walk-in-form {
     grid-template-columns: 1fr;
+  }
+
+  .app-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .member-card {

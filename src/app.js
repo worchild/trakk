@@ -1,4 +1,6 @@
-const STORAGE_KEY = 'trakk-v0-2-state';
+const STORAGE_KEY = 'trakk-state';
+const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
+const APP_VERSION = '0.3.0';
 
 const sampleClub = {
   id: 'club_001',
@@ -126,6 +128,7 @@ const paymentOptions = [
 ];
 
 let state = loadState();
+let memberSearch = '';
 
 function createInitialState() {
   return {
@@ -137,7 +140,7 @@ function createInitialState() {
 }
 
 function loadState() {
-  const savedState = localStorage.getItem(STORAGE_KEY);
+  const savedState = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
 
   if (!savedState) {
     return createInitialState();
@@ -161,6 +164,15 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 function formatMemberName(member) {
@@ -262,7 +274,60 @@ function addWalkIn(event) {
   form.reset();
 }
 
+function addMember(event) {
+  event.preventDefault();
+  const form = event.target;
+  const firstName = form.elements.firstName.value.trim();
+  const lastName = form.elements.lastName.value.trim();
+
+  if (!firstName || !lastName) return;
+
+  state.members.push({
+    id: `member_${Date.now()}`,
+    clubId: sampleClub.id,
+    firstName,
+    lastName,
+    status: 'active',
+    pricingLabel: form.elements.pricingLabel.value,
+    sessionBalance: Number(form.elements.sessionBalance.value || 0),
+    memberType: 'member',
+    notes: ''
+  });
+  saveState();
+  render();
+}
+
+function exportBackup() {
+  const payload = JSON.stringify({ version: APP_VERSION, exportedAt: new Date().toISOString(), ...state }, null, 2);
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+  link.download = `trakk-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function importBackup(event) {
+  const [file] = event.target.files;
+  if (!file) return;
+  const reader = new FileReader();
+  reader.addEventListener('load', () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      if (!Array.isArray(imported.members) || !Array.isArray(imported.sessions) || !Array.isArray(imported.attendanceRecords)) {
+        throw new Error('Missing Trakk data collections.');
+      }
+      state = { ...createInitialState(), ...imported };
+      saveState();
+      render();
+    } catch (error) {
+      window.alert(`Backup could not be imported: ${error.message}`);
+    }
+  });
+  reader.readAsText(file);
+}
+
 function resetSelectedSession() {
+  if (!window.confirm('Clear every attendance record for this session?')) return;
   const session = getSelectedSession();
   state.attendanceRecords = state.attendanceRecords.filter(
     record => record.sessionId !== session.id
@@ -336,8 +401,8 @@ function renderMemberCard(member) {
   return `
     <article class="member-card ${isPresent ? 'is-present' : ''}">
       <div class="member-info">
-        <h3>${formatMemberName(member)}</h3>
-        <p>${member.status} · ${member.pricingLabel} · ${balanceLabel}</p>
+        <h3>${escapeHtml(formatMemberName(member))}</h3>
+        <p>${escapeHtml(member.status)} · ${escapeHtml(member.pricingLabel)} · ${balanceLabel}</p>
         ${record ? `<p class="record-status">Marked: ${formatPaymentStatus(record.paymentStatus)}</p>` : ''}
       </div>
       <div class="actions">
@@ -365,7 +430,12 @@ function render() {
       <div>
         <p class="eyebrow">${sampleClub.name}</p>
         <h1>Trakk Attendance</h1>
-        <p class="version-label">v0.2.0 Real Attendance Flow</p>
+        <p class="version-label">v${APP_VERSION} Member & Data Tools</p>
+      </div>
+      <div class="data-actions">
+        <button class="secondary-button" id="export-backup">Export backup</button>
+        <label class="button-label" for="import-backup">Import backup</label>
+        <input class="visually-hidden" id="import-backup" type="file" accept="application/json,.json" />
       </div>
     </header>
 
@@ -386,8 +456,26 @@ function render() {
       ${renderWalkInForm()}
     </section>
 
+    <section class="member-tools-card">
+      <div>
+        <label class="field-label" for="member-search">Find member</label>
+        <input id="member-search" type="search" placeholder="Search by name" value="${escapeHtml(memberSearch)}" />
+      </div>
+      <form class="add-member-form" id="add-member-form">
+        <input name="firstName" required placeholder="First name" />
+        <input name="lastName" required placeholder="Last name" />
+        <select name="pricingLabel">
+          <option>Casual</option><option>8 Class Pass</option><option>Term Pass</option><option>Free Trial</option><option>Private Lessons</option>
+        </select>
+        <input name="sessionBalance" type="number" min="0" value="0" aria-label="Session balance" />
+        <button type="submit">Add member</button>
+      </form>
+    </section>
+
     <section class="member-list">
-      ${state.members.map(renderMemberCard).join('')}
+      ${state.members
+        .filter(member => formatMemberName(member).toLowerCase().includes(memberSearch.toLowerCase()))
+        .map(renderMemberCard).join('') || '<p class="empty-state">No members match that search.</p>'}
     </section>
   `;
 
@@ -398,6 +486,16 @@ function render() {
   });
 
   document.querySelector('#walk-in-form').addEventListener('submit', addWalkIn);
+  document.querySelector('#add-member-form').addEventListener('submit', addMember);
+  document.querySelector('#member-search').addEventListener('input', event => {
+    memberSearch = event.target.value;
+    render();
+    const search = document.querySelector('#member-search');
+    search.focus();
+    search.setSelectionRange(memberSearch.length, memberSearch.length);
+  });
+  document.querySelector('#export-backup').addEventListener('click', exportBackup);
+  document.querySelector('#import-backup').addEventListener('change', importBackup);
   document.querySelector('#reset-session').addEventListener('click', resetSelectedSession);
 
   document.querySelectorAll('[data-action="record"]').forEach(button => {

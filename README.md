@@ -44,3 +44,14 @@ Then evolve toward:
 ## Documentation
 
 See the `/docs` folder for the product vision, requirements, data model, and roadmap.
+
+## Current release
+
+**v0.3.0 — Member & Data Tools**
+
+- Persistent browser storage with automatic migration from v0.2.0
+- Add permanent members and walk-ins
+- Search the member check-in list
+- Export and import JSON backups
+- Confirmation before clearing a session
+- Mobile-friendly attendance workflow
