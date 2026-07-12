@@ -1,16 +1,28 @@
 const STORAGE_KEY = 'trakk-state';
 const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.4.0-dev';
 
-const sampleClub = {
-  id: 'club_001',
-  name: '4D Dance',
-  clubType: 'dance_school',
-  defaultCurrency: 'AUD',
-  timezone: 'Australia/Adelaide'
-};
+const clubs = [
+  { id: 'club_gym', name: 'Gym', clubType: 'gym', defaultCurrency: 'AUD', timezone: 'Australia/Adelaide' },
+  { id: 'club_001', name: '4D Dance', clubType: 'dance_school', defaultCurrency: 'AUD', timezone: 'Australia/Adelaide' }
+];
+
+const pricingPlans = [
+  { id: 'gym_subscription', clubId: 'club_gym', name: 'Weekly subscription', price: 40, cadence: 'per week' },
+  { id: 'gym_casual', clubId: 'club_gym', name: 'Casual', price: null, cadence: 'per visit' },
+  { id: 'gym_cash', clubId: 'club_gym', name: 'Cashie', price: null, cadence: 'per visit' },
+  { id: 'dance_single', clubId: 'club_001', name: 'Single class', price: 20, cadence: 'per class' },
+  { id: 'dance_8_pass', clubId: 'club_001', name: '8 class pass', price: 120, cadence: '4 month expiry' },
+  { id: 'dance_term', clubId: 'club_001', name: 'Term pass', price: 80, cadence: '8 consecutive weeks' },
+  { id: 'dance_private_one', clubId: 'club_001', name: 'Private lesson — one teacher', price: 80, cadence: 'per hour' },
+  { id: 'dance_private_two', clubId: 'club_001', name: 'Private lesson — two teachers', price: 120, cadence: 'per hour' },
+  { id: 'dance_intro', clubId: 'club_001', name: 'Newcomer group intro', price: 30, cadence: 'first 8 classes' }
+];
 
 const initialMembers = [
+  { id: 'gym_001', clubId: 'club_gym', firstName: 'Chris', lastName: 'Walker', status: 'active', pricingLabel: 'Weekly subscription', sessionBalance: null, memberType: 'member', notes: 'Regular.' },
+  { id: 'gym_002', clubId: 'club_gym', firstName: 'Jordan', lastName: 'King', status: 'active', pricingLabel: 'Weekly subscription', sessionBalance: null, memberType: 'member', notes: 'Regular.' },
+  { id: 'gym_003', clubId: 'club_gym', firstName: 'Taylor', lastName: 'Mills', status: 'casual', pricingLabel: 'Casual', sessionBalance: 0, memberType: 'member', notes: 'Casual attendee.' },
   {
     id: 'member_001',
     clubId: 'club_001',
@@ -80,6 +92,12 @@ const initialMembers = [
 ];
 
 const initialSessions = [
+  { id: 'gym_mon_run', clubId: 'club_gym', title: 'Monday Run Training', sessionType: 'Run training', startDateTime: '2026-07-13T18:00:00+09:30', endDateTime: '2026-07-13T19:00:00+09:30', instructor: 'Coach', location: 'Gym', capacity: 30, notes: 'Weekly run training.' },
+  { id: 'gym_tue_am', clubId: 'club_gym', title: 'Tuesday AM', sessionType: 'Group training', startDateTime: '2026-07-14T06:00:00+09:30', endDateTime: '2026-07-14T07:00:00+09:30', instructor: 'Coach', location: 'Gym', capacity: 30, notes: 'Regular morning session.' },
+  { id: 'gym_tue_pm', clubId: 'club_gym', title: 'Tuesday PM', sessionType: 'Group training', startDateTime: '2026-07-14T18:00:00+09:30', endDateTime: '2026-07-14T19:00:00+09:30', instructor: 'Coach', location: 'Gym', capacity: 30, notes: 'Regular evening session.' },
+  { id: 'gym_wed_am', clubId: 'club_gym', title: 'Wednesday AM', sessionType: 'Group training', startDateTime: '2026-07-15T06:00:00+09:30', endDateTime: '2026-07-15T07:00:00+09:30', instructor: 'Coach', location: 'Gym', capacity: 30, notes: 'Regular morning session.' },
+  { id: 'gym_wed_pm', clubId: 'club_gym', title: 'Wednesday PM', sessionType: 'Group training', startDateTime: '2026-07-15T18:00:00+09:30', endDateTime: '2026-07-15T19:00:00+09:30', instructor: 'Coach', location: 'Gym', capacity: 30, notes: 'Regular evening session.' },
+  { id: 'gym_private', clubId: 'club_gym', title: 'Gym Private Sessions', sessionType: 'Private lessons', startDateTime: '2026-07-16T18:00:00+09:30', endDateTime: '2026-07-16T20:00:00+09:30', instructor: 'Coach', location: 'Gym', capacity: 4, notes: 'Private coaching block.' },
   {
     id: 'session_001',
     clubId: 'club_001',
@@ -92,6 +110,7 @@ const initialSessions = [
     capacity: 40,
     notes: 'Beginners and Level 2 classes.'
   },
+  { id: 'session_shed', clubId: 'club_001', title: 'Tuesday Shed', sessionType: 'Group class', startDateTime: '2026-07-14T19:00:00+09:30', endDateTime: '2026-07-14T21:00:00+09:30', instructor: 'Team', location: 'The Shed', capacity: 30, notes: 'Tuesday dance session.' },
   {
     id: 'session_002',
     clubId: 'club_001',
@@ -132,7 +151,8 @@ let memberSearch = '';
 
 function createInitialState() {
   return {
-    selectedSessionId: initialSessions[0].id,
+    selectedClubId: 'club_001',
+    selectedSessionId: 'session_001',
     members: initialMembers,
     sessions: initialSessions,
     attendanceRecords: []
@@ -149,11 +169,17 @@ function loadState() {
   try {
     const parsedState = JSON.parse(savedState);
 
+    const mergeById = (saved = [], defaults = []) => [
+      ...saved,
+      ...defaults.filter(defaultItem => !saved.some(savedItem => savedItem.id === defaultItem.id))
+    ];
+
     return {
       ...createInitialState(),
       ...parsedState,
-      members: parsedState.members || initialMembers,
-      sessions: parsedState.sessions || initialSessions,
+      selectedClubId: parsedState.selectedClubId || 'club_001',
+      members: mergeById(parsedState.members, initialMembers),
+      sessions: mergeById(parsedState.sessions, initialSessions),
       attendanceRecords: parsedState.attendanceRecords || []
     };
   } catch (error) {
@@ -180,7 +206,20 @@ function formatMemberName(member) {
 }
 
 function getSelectedSession() {
-  return state.sessions.find(session => session.id === state.selectedSessionId) || state.sessions[0];
+  return state.sessions.find(session => session.id === state.selectedSessionId)
+    || state.sessions.find(session => session.clubId === state.selectedClubId);
+}
+
+function getSelectedClub() {
+  return clubs.find(club => club.id === state.selectedClubId) || clubs[0];
+}
+
+function getClubSessions() {
+  return state.sessions.filter(session => session.clubId === state.selectedClubId);
+}
+
+function getClubMembers() {
+  return state.members.filter(member => member.clubId === state.selectedClubId);
 }
 
 function getAttendanceForSelectedSession() {
@@ -221,7 +260,7 @@ function recordAttendance(memberId, paymentStatus) {
   } else {
     state.attendanceRecords.push({
       id: `attendance_${Date.now()}`,
-      clubId: sampleClub.id,
+      clubId: state.selectedClubId,
       sessionId: session.id,
       memberId,
       attendanceStatus: 'present',
@@ -259,7 +298,7 @@ function addWalkIn(event) {
   const [firstName, ...lastNameParts] = name.split(' ');
   const member = {
     id: `walkin_${Date.now()}`,
-    clubId: sampleClub.id,
+    clubId: state.selectedClubId,
     firstName,
     lastName: lastNameParts.join(' ') || 'Walk-in',
     status: 'walk-in',
@@ -284,7 +323,7 @@ function addMember(event) {
 
   state.members.push({
     id: `member_${Date.now()}`,
-    clubId: sampleClub.id,
+      clubId: state.selectedClubId,
     firstName,
     lastName,
     status: 'active',
@@ -366,13 +405,24 @@ function renderSessionSelector() {
   return `
     <label class="field-label" for="session-select">Session</label>
     <select id="session-select">
-      ${state.sessions.map(session => `
+      ${getClubSessions().map(session => `
         <option value="${session.id}" ${session.id === state.selectedSessionId ? 'selected' : ''}>
           ${session.title} — ${formatSessionDate(session.startDateTime)}
         </option>
       `).join('')}
     </select>
   `;
+}
+
+function renderClubSelector() {
+  return `<label class="field-label" for="club-select">Club profile</label>
+    <select id="club-select">${clubs.map(club => `<option value="${club.id}" ${club.id === state.selectedClubId ? 'selected' : ''}>${club.name}</option>`).join('')}</select>`;
+}
+
+function renderPricingPlans() {
+  return `<section class="pricing-card"><h2>Pricing</h2><div class="pricing-grid">
+    ${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<article><strong>${escapeHtml(plan.name)}</strong><span>${plan.price === null ? 'Price set at check-in' : `$${plan.price}`} · ${escapeHtml(plan.cadence)}</span></article>`).join('')}
+  </div></section>`;
 }
 
 function renderWalkInForm() {
@@ -422,13 +472,14 @@ function renderMemberCard(member) {
 
 function render() {
   const app = document.querySelector('#app');
+  const club = getSelectedClub();
   const session = getSelectedSession();
   const summary = getSummary();
 
   app.innerHTML = `
     <header class="app-header">
       <div>
-        <p class="eyebrow">${sampleClub.name}</p>
+        <p class="eyebrow">${club.name}</p>
         <h1>Trakk Attendance</h1>
         <p class="version-label">v${APP_VERSION} Member & Data Tools</p>
       </div>
@@ -442,6 +493,8 @@ function render() {
     ${renderSummaryCards(summary)}
 
     <section class="session-card">
+      ${renderClubSelector()}
+      <div class="club-selector-spacer"></div>
       ${renderSessionSelector()}
       <div class="session-details">
         <h2>${session.title}</h2>
@@ -451,6 +504,8 @@ function render() {
       </div>
       <button class="secondary-button danger-button" id="reset-session">Clear this session</button>
     </section>
+
+    ${renderPricingPlans()}
 
     <section class="walk-in-card">
       ${renderWalkInForm()}
@@ -464,16 +519,14 @@ function render() {
       <form class="add-member-form" id="add-member-form">
         <input name="firstName" required placeholder="First name" />
         <input name="lastName" required placeholder="Last name" />
-        <select name="pricingLabel">
-          <option>Casual</option><option>8 Class Pass</option><option>Term Pass</option><option>Free Trial</option><option>Private Lessons</option>
-        </select>
+        <select name="pricingLabel">${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<option>${escapeHtml(plan.name)}</option>`).join('')}</select>
         <input name="sessionBalance" type="number" min="0" value="0" aria-label="Session balance" />
         <button type="submit">Add member</button>
       </form>
     </section>
 
     <section class="member-list">
-      ${state.members
+      ${getClubMembers()
         .filter(member => formatMemberName(member).toLowerCase().includes(memberSearch.toLowerCase()))
         .map(renderMemberCard).join('') || '<p class="empty-state">No members match that search.</p>'}
     </section>
@@ -481,6 +534,13 @@ function render() {
 
   document.querySelector('#session-select').addEventListener('change', event => {
     state.selectedSessionId = event.target.value;
+    saveState();
+    render();
+  });
+  document.querySelector('#club-select').addEventListener('change', event => {
+    state.selectedClubId = event.target.value;
+    state.selectedSessionId = getClubSessions()[0].id;
+    memberSearch = '';
     saveState();
     render();
   });

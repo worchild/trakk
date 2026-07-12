@@ -88,6 +88,7 @@ h1 {
 .session-card,
 .walk-in-card,
 .member-tools-card,
+.pricing-card,
 .member-card {
   background: #fff;
   border-radius: 1rem;
@@ -137,9 +138,32 @@ h1 {
 
 .session-card,
 .walk-in-card,
-.member-tools-card {
+.member-tools-card,
+.pricing-card {
   padding: 1rem;
   margin-bottom: 1rem;
+}
+
+.club-selector-spacer {
+  height: 0.8rem;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.65rem;
+}
+
+.pricing-grid article {
+  padding: 0.85rem;
+  border: 1px solid #e5e8e8;
+  border-radius: 0.8rem;
+}
+
+.pricing-grid span {
+  display: block;
+  margin-top: 0.25rem;
+  color: #5d6d7e;
 }
 
 .data-actions,

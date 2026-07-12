@@ -55,3 +55,7 @@ See the `/docs` folder for the product vision, requirements, data model, and roa
 - Export and import JSON backups
 - Confirmation before clearing a session
 - Mobile-friendly attendance workflow
+
+## In development
+
+The `feature/club-profiles` branch introduces separate Gym and 4D Dance profiles with their own weekly schedules, pricing plans, member lists and attendance records.
