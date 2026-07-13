@@ -59,3 +59,12 @@ See the `/docs` folder for the product vision, requirements, data model, and roa
 ## In development
 
 The `feature/club-profiles` branch introduces separate Gym and 4D Dance profiles with their own weekly schedules, pricing plans, member lists and attendance records.
+
+### v0.5.0 development
+
+The `feature/recurring-schedules` branch adds shared scheduling infrastructure:
+
+- Editable session details
+- Creation of one-off sessions
+- Club-specific weekly schedule templates
+- Duplicate-safe generation of the next four weeks of dated sessions

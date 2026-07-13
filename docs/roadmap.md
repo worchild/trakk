@@ -52,6 +52,17 @@ Deliverables:
 - Save attendance records
 - Import/export JSON backup
 
+## Phase 2.5: Shared scheduling
+
+Status: In development in v0.5.0
+
+Deliverables:
+
+- Edit scheduled sessions
+- Create one-off sessions
+- Define company-specific weekly templates
+- Generate four weeks of dated sessions without duplicates
+
 ## Phase 3: Reports
 
 Goal: Make the data useful.

@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'trakk-state';
 const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.4.0-dev';
+const APP_VERSION = '0.5.0-dev';
 
 const clubs = [
   { id: 'club_gym', name: 'Gym', clubType: 'gym', defaultCurrency: 'AUD', timezone: 'Australia/Adelaide' },
@@ -137,6 +137,16 @@ const initialSessions = [
   }
 ];
 
+const initialScheduleTemplates = [
+  { id: 'tpl_gym_mon_run', clubId: 'club_gym', title: 'Monday Run Training', weekday: 1, startTime: '18:00', durationMinutes: 60, sessionType: 'Run training', instructor: 'Coach', location: 'Gym', capacity: 30 },
+  { id: 'tpl_gym_tue_am', clubId: 'club_gym', title: 'Tuesday AM', weekday: 2, startTime: '06:00', durationMinutes: 60, sessionType: 'Group training', instructor: 'Coach', location: 'Gym', capacity: 30 },
+  { id: 'tpl_gym_tue_pm', clubId: 'club_gym', title: 'Tuesday PM', weekday: 2, startTime: '18:00', durationMinutes: 60, sessionType: 'Group training', instructor: 'Coach', location: 'Gym', capacity: 30 },
+  { id: 'tpl_gym_wed_am', clubId: 'club_gym', title: 'Wednesday AM', weekday: 3, startTime: '06:00', durationMinutes: 60, sessionType: 'Group training', instructor: 'Coach', location: 'Gym', capacity: 30 },
+  { id: 'tpl_gym_wed_pm', clubId: 'club_gym', title: 'Wednesday PM', weekday: 3, startTime: '18:00', durationMinutes: 60, sessionType: 'Group training', instructor: 'Coach', location: 'Gym', capacity: 30 },
+  { id: 'tpl_dance_mon', clubId: 'club_001', title: 'Monday Dance Classes', weekday: 1, startTime: '19:30', durationMinutes: 120, sessionType: 'Group class', instructor: 'Team', location: 'Mitcham Cultural Centre', capacity: 40 },
+  { id: 'tpl_dance_shed', clubId: 'club_001', title: 'Tuesday Shed', weekday: 2, startTime: '19:00', durationMinutes: 120, sessionType: 'Group class', instructor: 'Team', location: 'The Shed', capacity: 30 }
+];
+
 const paymentOptions = [
   { id: 'paid_casual', label: 'Paid' },
   { id: 'pass_used', label: 'Pass' },
@@ -155,6 +165,7 @@ function createInitialState() {
     selectedSessionId: 'session_001',
     members: initialMembers,
     sessions: initialSessions,
+    scheduleTemplates: initialScheduleTemplates,
     attendanceRecords: []
   };
 }
@@ -180,6 +191,7 @@ function loadState() {
       selectedClubId: parsedState.selectedClubId || 'club_001',
       members: mergeById(parsedState.members, initialMembers),
       sessions: mergeById(parsedState.sessions, initialSessions),
+      scheduleTemplates: mergeById(parsedState.scheduleTemplates, initialScheduleTemplates),
       attendanceRecords: parsedState.attendanceRecords || []
     };
   } catch (error) {
@@ -220,6 +232,86 @@ function getClubSessions() {
 
 function getClubMembers() {
   return state.members.filter(member => member.clubId === state.selectedClubId);
+}
+
+function getClubScheduleTemplates() {
+  return state.scheduleTemplates.filter(template => template.clubId === state.selectedClubId);
+}
+
+function toLocalInputValue(dateTime) {
+  const date = new Date(dateTime);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function toIsoDateTime(localDateTime) {
+  return new Date(localDateTime).toISOString();
+}
+
+function formatLocalDatePart(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function addMinutes(dateTime, minutes) {
+  return new Date(new Date(dateTime).getTime() + minutes * 60000).toISOString();
+}
+
+function saveSession(event) {
+  event.preventDefault();
+  const form = event.target;
+  const existing = state.sessions.find(session => session.id === form.elements.sessionId.value);
+  const startDateTime = toIsoDateTime(form.elements.startDateTime.value);
+  const session = {
+    id: existing?.id || `session_${Date.now()}`,
+    clubId: state.selectedClubId,
+    title: form.elements.title.value.trim(),
+    sessionType: form.elements.sessionType.value.trim(),
+    startDateTime,
+    endDateTime: addMinutes(startDateTime, Number(form.elements.durationMinutes.value)),
+    instructor: form.elements.instructor.value.trim(),
+    location: form.elements.location.value.trim(),
+    capacity: Number(form.elements.capacity.value),
+    notes: form.elements.notes.value.trim()
+  };
+
+  if (existing) Object.assign(existing, session);
+  else state.sessions.push(session);
+  state.selectedSessionId = session.id;
+  saveState();
+  render();
+}
+
+function generateRecurringSessions() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let added = 0;
+
+  getClubScheduleTemplates().forEach(template => {
+    for (let week = 0; week < 4; week += 1) {
+      const date = new Date(today);
+      const daysAhead = (template.weekday - date.getDay() + 7) % 7 + week * 7;
+      date.setDate(date.getDate() + daysAhead);
+      const datePart = formatLocalDatePart(date);
+      const startDateTime = toIsoDateTime(`${datePart}T${template.startTime}`);
+      const id = `${template.id}_${datePart}`;
+      if (state.sessions.some(session => session.id === id)) continue;
+      state.sessions.push({
+        ...template,
+        id,
+        templateId: template.id,
+        startDateTime,
+        endDateTime: addMinutes(startDateTime, template.durationMinutes),
+        notes: 'Generated from weekly schedule.'
+      });
+      added += 1;
+    }
+  });
+  saveState();
+  window.alert(`${added} sessions added for the next four weeks.`);
+  render();
 }
 
 function getAttendanceForSelectedSession() {
@@ -425,6 +517,53 @@ function renderPricingPlans() {
   </div></section>`;
 }
 
+function renderScheduleManager(session) {
+  const durationMinutes = Math.round((new Date(session.endDateTime) - new Date(session.startDateTime)) / 60000);
+  return `
+    <section class="schedule-card">
+      <div class="section-heading">
+        <div><p class="eyebrow">Shared scheduling engine</p><h2>Session editor</h2></div>
+        <button id="generate-sessions" type="button">Generate next 4 weeks</button>
+      </div>
+      <p class="template-summary">${getClubScheduleTemplates().length} weekly templates configured for ${escapeHtml(getSelectedClub().name)}.</p>
+      <form class="session-form" id="session-form">
+        <input type="hidden" name="sessionId" value="${session.id}" />
+        <label><span>Title</span><input name="title" required value="${escapeHtml(session.title)}" /></label>
+        <label><span>Type</span><input name="sessionType" required value="${escapeHtml(session.sessionType)}" /></label>
+        <label><span>Starts</span><input name="startDateTime" type="datetime-local" required value="${toLocalInputValue(session.startDateTime)}" /></label>
+        <label><span>Minutes</span><input name="durationMinutes" type="number" min="15" step="15" required value="${durationMinutes}" /></label>
+        <label><span>Instructor</span><input name="instructor" required value="${escapeHtml(session.instructor)}" /></label>
+        <label><span>Location</span><input name="location" required value="${escapeHtml(session.location)}" /></label>
+        <label><span>Capacity</span><input name="capacity" type="number" min="1" required value="${session.capacity}" /></label>
+        <label class="wide-field"><span>Notes</span><input name="notes" value="${escapeHtml(session.notes)}" /></label>
+        <div class="form-actions">
+          <button type="submit">Save session</button>
+          <button type="button" class="secondary-button" id="new-session">Create new</button>
+        </div>
+      </form>
+    </section>`;
+}
+
+function prepareNewSession() {
+  const start = new Date();
+  start.setMinutes(Math.ceil(start.getMinutes() / 15) * 15, 0, 0);
+  state.sessions.push({
+    id: `draft_${Date.now()}`,
+    clubId: state.selectedClubId,
+    title: 'New session',
+    sessionType: 'Group session',
+    startDateTime: start.toISOString(),
+    endDateTime: addMinutes(start.toISOString(), 60),
+    instructor: '',
+    location: '',
+    capacity: 20,
+    notes: '',
+    isDraft: true
+  });
+  state.selectedSessionId = state.sessions.at(-1).id;
+  render();
+}
+
 function renderWalkInForm() {
   return `
     <form class="walk-in-form" id="walk-in-form">
@@ -481,7 +620,7 @@ function render() {
       <div>
         <p class="eyebrow">${club.name}</p>
         <h1>Trakk Attendance</h1>
-        <p class="version-label">v${APP_VERSION} Member & Data Tools</p>
+        <p class="version-label">v${APP_VERSION} Shared Scheduling</p>
       </div>
       <div class="data-actions">
         <button class="secondary-button" id="export-backup">Export backup</button>
@@ -504,6 +643,8 @@ function render() {
       </div>
       <button class="secondary-button danger-button" id="reset-session">Clear this session</button>
     </section>
+
+    ${renderScheduleManager(session)}
 
     ${renderPricingPlans()}
 
@@ -557,6 +698,9 @@ function render() {
   document.querySelector('#export-backup').addEventListener('click', exportBackup);
   document.querySelector('#import-backup').addEventListener('change', importBackup);
   document.querySelector('#reset-session').addEventListener('click', resetSelectedSession);
+  document.querySelector('#session-form').addEventListener('submit', saveSession);
+  document.querySelector('#generate-sessions').addEventListener('click', generateRecurringSessions);
+  document.querySelector('#new-session').addEventListener('click', prepareNewSession);
 
   document.querySelectorAll('[data-action="record"]').forEach(button => {
     button.addEventListener('click', event => {
