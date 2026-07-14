@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'trakk-state';
 const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.7.0-dev';
+const APP_VERSION = '0.8.0-dev';
 const APP_CONFIG = {
   activeClubId: 'club_001'
 };
@@ -151,6 +151,7 @@ const initialScheduleTemplates = [
 ];
 
 const paymentOptions = [
+  { id: 'pending', label: 'Pending' },
   { id: 'paid_casual', label: 'Paid' },
   { id: 'pass_used', label: 'Pass' },
   { id: 'free_trial', label: 'Trial' },
@@ -405,7 +406,7 @@ function addWalkIn(event) {
   };
 
   state.members.push(member);
-  recordAttendance(member.id, form.elements.walkInPayment.value);
+  recordAttendance(member.id, 'pending');
   form.reset();
 }
 
@@ -571,10 +572,7 @@ function renderNewcomerRows() {
           <form class="walk-in-form" data-newcomer-form>
             <span class="row-number">+</span>
             <input name="walkInName" type="text" placeholder="New attendee name" autocomplete="off" aria-label="New attendee name" />
-            <select name="walkInPayment" aria-label="New attendee payment type">
-              ${paymentOptions.map(option => `<option value="${option.id}">${option.label}</option>`).join('')}
-            </select>
-            <button type="submit">Add & check in</button>
+            <button type="submit" class="here-button">Add & Here</button>
           </form>
       </div>
     </section>
@@ -602,15 +600,12 @@ function renderMemberCard(member) {
         ${record ? `<p class="record-status">Marked: ${formatPaymentStatus(record.paymentStatus)}</p>` : ''}
       </div>
       <div class="actions">
-        ${paymentOptions.map(option => `
-          <button
-            class="${record && record.paymentStatus === option.id ? 'selected-action' : ''}"
-            data-action="record"
-            data-member-id="${member.id}"
-            data-payment-status="${option.id}"
-          >${option.label}</button>
-        `).join('')}
-        ${record ? `<button class="secondary-button" data-action="remove" data-member-id="${member.id}">Undo</button>` : ''}
+        <button
+          class="here-button ${record ? 'is-here' : ''}"
+          data-action="here"
+          data-member-id="${member.id}"
+          ${record ? 'disabled' : ''}
+        >${record ? 'Here ✓' : 'Here'}</button>
       </div>
     </article>
   `;
@@ -619,8 +614,51 @@ function renderMemberCard(member) {
 function renderTabs() {
   return `<nav class="tabs" aria-label="Trakk sections">
     <button class="tab-button ${activeTab === 'attendance' ? 'active-tab' : ''}" data-tab="attendance">Attendance</button>
+    <button class="tab-button ${activeTab === 'billing' ? 'active-tab' : ''}" data-tab="billing">Billing</button>
     <button class="tab-button ${activeTab === 'admin' ? 'active-tab' : ''}" data-tab="admin">Admin</button>
   </nav>`;
+}
+
+function renderBillingButtons(record) {
+  return paymentOptions.filter(option => option.id !== 'pending').map(option => `
+    <button class="charge-button ${record.paymentStatus === option.id ? 'selected-charge' : ''}"
+      data-action="charge" data-member-id="${record.memberId}" data-payment-status="${option.id}">${option.label}</button>
+  `).join('');
+}
+
+function getTermAttendanceRows() {
+  const clubSessionIds = new Set(getClubSessions().map(session => session.id));
+  const rows = new Map();
+  state.attendanceRecords.filter(record => clubSessionIds.has(record.sessionId)).forEach(record => {
+    const member = state.members.find(item => item.id === record.memberId);
+    if (!member) return;
+    const row = rows.get(member.id) || { member, records: [] };
+    row.records.push(record);
+    rows.set(member.id, row);
+  });
+  return [...rows.values()].sort((a, b) => formatMemberName(a.member).localeCompare(formatMemberName(b.member)));
+}
+
+function renderBillingTab(session) {
+  const currentRecords = getAttendanceForSelectedSession();
+  const termRows = getTermAttendanceRows();
+  return `
+    ${renderSessionStrip(session)}
+    <section class="billing-card">
+      <p class="eyebrow">Current session</p><h2>Charging</h2>
+      <div class="billing-list">
+        ${currentRecords.map(record => {
+          const member = state.members.find(item => item.id === record.memberId);
+          return member ? `<article class="billing-row"><div><strong>${escapeHtml(formatMemberName(member))}</strong><span>${escapeHtml(formatPaymentStatus(record.paymentStatus))}</span></div><div class="charge-actions">${renderBillingButtons(record)}</div></article>` : '';
+        }).join('') || '<p class="empty-state">No one has checked in yet.</p>'}
+      </div>
+    </section>
+    <section class="term-card">
+      <p class="eyebrow">Current term</p><h2>Term attendees and payment details</h2>
+      <div class="term-table-wrap"><table class="term-table"><thead><tr><th>Attendee</th><th>Sessions</th><th>Payment details</th></tr></thead><tbody>
+        ${termRows.map(row => `<tr><td>${escapeHtml(formatMemberName(row.member))}${row.member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</td><td>${row.records.length}</td><td>${row.records.map(record => escapeHtml(formatPaymentStatus(record.paymentStatus))).join(', ')}</td></tr>`).join('') || '<tr><td colspan="3">No term attendance recorded yet.</td></tr>'}
+      </tbody></table></div>
+    </section>`;
 }
 
 function renderSessionStrip(session) {
@@ -691,7 +729,7 @@ function render() {
       </div>
     </header>
     ${renderTabs()}
-    ${activeTab === 'attendance' ? renderAttendanceTab(session, summary) : renderAdminTab(session)}
+    ${activeTab === 'attendance' ? renderAttendanceTab(session, summary) : activeTab === 'billing' ? renderBillingTab(session) : renderAdminTab(session)}
   `;
 
   document.querySelector('#session-select')?.addEventListener('change', event => {
@@ -719,12 +757,15 @@ function render() {
   document.querySelector('#generate-sessions')?.addEventListener('click', generateRecurringSessions);
   document.querySelector('#new-session')?.addEventListener('click', prepareNewSession);
 
-  document.querySelectorAll('[data-action="record"]').forEach(button => {
+  document.querySelectorAll('[data-action="here"]').forEach(button => {
     button.addEventListener('click', event => {
-      recordAttendance(
-        event.target.dataset.memberId,
-        event.target.dataset.paymentStatus
-      );
+      recordAttendance(event.currentTarget.dataset.memberId, 'pending');
+    });
+  });
+
+  document.querySelectorAll('[data-action="charge"]').forEach(button => {
+    button.addEventListener('click', event => {
+      recordAttendance(event.currentTarget.dataset.memberId, event.currentTarget.dataset.paymentStatus);
     });
   });
 

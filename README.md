@@ -76,3 +76,7 @@ The `feature/attendance-first-layout` branch reorganises the screen for front-do
 ### v0.7.0 development
 
 The `feature/tabbed-attendance-layout` branch locks the UI to one configured company, places the session picker and details in one strip, displays 8–12 attendee cards in a responsive grid, promotes newcomers into the grid with a New badge, and moves member/session administration to a second tab.
+
+### v0.8.0 development
+
+The `feature/checkin-and-billing` branch reduces attendance cards to one green Here button. Payment classification moves to a dedicated Billing tab, with current-session charging controls and a term attendance ledger showing payment details.

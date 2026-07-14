@@ -150,6 +150,8 @@ h1 {
 .member-tools-card,
 .pricing-card,
 .schedule-card,
+.billing-card,
+.term-card,
 .member-card {
   background: #fff;
   border-radius: 1rem;
@@ -202,9 +204,83 @@ h1 {
 .newcomer-card,
 .member-tools-card,
 .pricing-card,
-.schedule-card {
+.schedule-card,
+.billing-card,
+.term-card {
   padding: 1rem;
   margin-bottom: 1rem;
+}
+
+.here-button {
+  background: #1e8449;
+  color: #fff;
+}
+
+.here-button:hover {
+  background: #196f3d;
+}
+
+.here-button.is-here,
+.here-button:disabled {
+  opacity: 1;
+  background: #27ae60;
+  cursor: default;
+}
+
+.billing-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.billing-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) 2fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem;
+  border: 1px solid #e5e8e8;
+  border-radius: 0.8rem;
+}
+
+.billing-row span {
+  display: block;
+  margin-top: 0.2rem;
+  color: #5d6d7e;
+}
+
+.charge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.charge-button {
+  padding: 0.5rem 0.7rem;
+  background: #e5e8e8;
+  color: #17202a;
+  font-size: 0.85rem;
+}
+
+.charge-button.selected-charge {
+  background: #17202a;
+  color: #fff;
+}
+
+.term-table-wrap {
+  overflow-x: auto;
+}
+
+.term-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.term-table th,
+.term-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e8e8;
+  text-align: left;
+  vertical-align: top;
 }
 
 .section-heading {
@@ -361,7 +437,7 @@ h1 {
 
 .walk-in-form {
   display: grid;
-  grid-template-columns: auto 1fr 180px auto;
+  grid-template-columns: auto 1fr auto;
   gap: 0.75rem;
   align-items: end;
 }
@@ -467,6 +543,10 @@ h1 {
   .session-strip {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .billing-row {
+    grid-template-columns: 1fr;
   }
 
   .actions {
