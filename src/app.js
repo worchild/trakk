@@ -567,17 +567,16 @@ function prepareNewSession() {
 function renderNewcomerRows() {
   return `
     <section class="newcomer-card">
-      <div class="section-heading"><div><p class="eyebrow">New and casual attendees</p><h2>Blank check-in rows</h2></div></div>
+      <div class="section-heading"><div><p class="eyebrow">New and casual attendees</p><h2>Newcomer check-in</h2></div></div>
       <div class="newcomer-rows">
-        ${Array.from({ length: 4 }, (_, index) => `
           <form class="walk-in-form" data-newcomer-form>
-            <span class="row-number">${index + 1}</span>
-            <input name="walkInName" type="text" placeholder="New attendee name" autocomplete="off" aria-label="New attendee ${index + 1} name" />
-            <select name="walkInPayment" aria-label="New attendee ${index + 1} payment type">
+            <span class="row-number">+</span>
+            <input name="walkInName" type="text" placeholder="New attendee name" autocomplete="off" aria-label="New attendee name" />
+            <select name="walkInPayment" aria-label="New attendee payment type">
               ${paymentOptions.map(option => `<option value="${option.id}">${option.label}</option>`).join('')}
             </select>
             <button type="submit">Add & check in</button>
-          </form>`).join('')}
+          </form>
       </div>
     </section>
   `;
