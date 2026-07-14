@@ -59,6 +59,65 @@ select {
   margin-bottom: 1rem;
 }
 
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: #e5e8e8;
+}
+
+.tab-button {
+  flex: 1;
+  background: transparent;
+  color: #17202a;
+}
+
+.tab-button.active-tab {
+  background: #17202a;
+  color: #fff;
+}
+
+.session-strip {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(420px, 2fr);
+  gap: 1rem;
+  align-items: end;
+}
+
+.session-inline-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  align-items: center;
+  min-height: 46px;
+}
+
+.session-inline-details strong {
+  font-size: 1.1rem;
+}
+
+.session-inline-details span {
+  color: #5d6d7e;
+}
+
+.attendee-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 0.75rem;
+}
+
+.attendee-heading h2 {
+  margin-bottom: 0;
+}
+
+.attendee-heading input {
+  width: min(300px, 100%);
+}
+
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
@@ -309,14 +368,16 @@ h1 {
 
 .member-list {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .member-card {
-  display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  align-items: center;
+  align-items: stretch;
   padding: 1rem;
   border: 2px solid transparent;
 }
@@ -332,9 +393,28 @@ h1 {
 .actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 0.5rem;
   max-width: 520px;
+}
+
+.actions button {
+  flex: 1 1 calc(33.333% - 0.5rem);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+.new-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: #d5f5e3;
+  color: #196f3d;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
 }
 
 .selected-action {
@@ -380,6 +460,15 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .member-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .session-strip {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
   .actions {
     justify-content: stretch;
     max-width: none;
@@ -405,6 +494,19 @@ h1 {
 
   .actions button {
     flex-basis: 100%;
+  }
+
+  .member-list {
+    grid-template-columns: 1fr;
+  }
+
+  .attendee-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .attendee-heading input {
+    width: 100%;
   }
 
   .section-heading,

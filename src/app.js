@@ -1,6 +1,9 @@
 const STORAGE_KEY = 'trakk-state';
 const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.6.0-dev';
+const APP_VERSION = '0.7.0-dev';
+const APP_CONFIG = {
+  activeClubId: 'club_001'
+};
 
 const clubs = [
   { id: 'club_gym', name: 'Gym', clubType: 'gym', defaultCurrency: 'AUD', timezone: 'Australia/Adelaide' },
@@ -158,10 +161,11 @@ const paymentOptions = [
 
 let state = loadState();
 let memberSearch = '';
+let activeTab = 'attendance';
 
 function createInitialState() {
   return {
-    selectedClubId: 'club_001',
+    selectedClubId: APP_CONFIG.activeClubId,
     selectedSessionId: 'session_001',
     members: initialMembers,
     sessions: initialSessions,
@@ -188,7 +192,7 @@ function loadState() {
     return {
       ...createInitialState(),
       ...parsedState,
-      selectedClubId: parsedState.selectedClubId || 'club_001',
+      selectedClubId: APP_CONFIG.activeClubId,
       members: mergeById(parsedState.members, initialMembers),
       sessions: mergeById(parsedState.sessions, initialSessions),
       scheduleTemplates: mergeById(parsedState.scheduleTemplates, initialScheduleTemplates),
@@ -218,7 +222,7 @@ function formatMemberName(member) {
 }
 
 function getSelectedSession() {
-  return state.sessions.find(session => session.id === state.selectedSessionId)
+  return state.sessions.find(session => session.id === state.selectedSessionId && session.clubId === state.selectedClubId)
     || state.sessions.find(session => session.clubId === state.selectedClubId);
 }
 
@@ -506,11 +510,6 @@ function renderSessionSelector() {
   `;
 }
 
-function renderClubSelector() {
-  return `<label class="field-label" for="club-select">Club profile</label>
-    <select id="club-select">${clubs.map(club => `<option value="${club.id}" ${club.id === state.selectedClubId ? 'selected' : ''}>${club.name}</option>`).join('')}</select>`;
-}
-
 function renderPricingPlans() {
   return `<section class="pricing-card"><h2>Pricing</h2><div class="pricing-grid">
     ${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<article><strong>${escapeHtml(plan.name)}</strong><span>${plan.price === null ? 'Price set at check-in' : `$${plan.price}`} · ${escapeHtml(plan.cadence)}</span></article>`).join('')}
@@ -597,7 +596,7 @@ function renderMemberCard(member) {
   return `
     <article class="member-card ${isPresent ? 'is-present' : ''}">
       <div class="member-info">
-        <h3>${escapeHtml(formatMemberName(member))}</h3>
+        <h3>${escapeHtml(formatMemberName(member))}${member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
         <p class="billing-info">${escapeHtml(getBillingSummary(member))}</p>
         <p class="member-status">${escapeHtml(member.status)}</p>
         ${record ? `<p class="record-status">Marked: ${formatPaymentStatus(record.paymentStatus)}</p>` : ''}
@@ -617,6 +616,61 @@ function renderMemberCard(member) {
   `;
 }
 
+function renderTabs() {
+  return `<nav class="tabs" aria-label="Trakk sections">
+    <button class="tab-button ${activeTab === 'attendance' ? 'active-tab' : ''}" data-tab="attendance">Attendance</button>
+    <button class="tab-button ${activeTab === 'admin' ? 'active-tab' : ''}" data-tab="admin">Admin</button>
+  </nav>`;
+}
+
+function renderSessionStrip(session) {
+  return `<section class="session-card session-strip">
+    <div class="session-picker">${renderSessionSelector()}</div>
+    <div class="session-inline-details">
+      <strong>${escapeHtml(session.title)}</strong>
+      <span>${escapeHtml(session.sessionType)} · ${formatSessionDate(session.startDateTime)}</span>
+      <span>${escapeHtml(session.location)} · ${escapeHtml(session.instructor)} · ${session.capacity} places</span>
+    </div>
+  </section>`;
+}
+
+function renderAttendanceTab(session, summary) {
+  return `
+    ${renderSessionStrip(session)}
+    <section class="attendee-heading">
+      <div><p class="eyebrow">Session check-in</p><h2>Attendees</h2></div>
+      <input id="member-search" type="search" placeholder="Find attendee" value="${escapeHtml(memberSearch)}" aria-label="Find attendee" />
+    </section>
+    <section class="member-list">
+      ${getClubMembers()
+        .filter(member => formatMemberName(member).toLowerCase().includes(memberSearch.toLowerCase()))
+        .map(renderMemberCard).join('') || '<p class="empty-state">No members match that search.</p>'}
+    </section>
+    ${renderNewcomerRows()}
+    <section class="statistics-section">
+      <p class="eyebrow">Session results</p>
+      <h2>Attendance statistics</h2>
+      ${renderSummaryCards(summary)}
+    </section>`;
+}
+
+function renderAdminTab(session) {
+  return `
+    ${renderSessionStrip(session)}
+    ${renderScheduleManager(session)}
+    <section class="member-tools-card">
+      <p class="eyebrow">Member administration</p>
+      <h2>Add a regular member</h2>
+      <form class="add-member-form" id="add-member-form">
+        <input name="firstName" required placeholder="First name" />
+        <input name="lastName" required placeholder="Last name" />
+        <select name="pricingLabel">${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<option>${escapeHtml(plan.name)}</option>`).join('')}</select>
+        <input name="sessionBalance" type="number" min="0" value="0" aria-label="Session balance" />
+        <button type="submit">Add member</button>
+      </form>
+    </section>`;
+}
+
 function render() {
   const app = document.querySelector('#app');
   const club = getSelectedClub();
@@ -628,7 +682,7 @@ function render() {
       <div>
         <p class="eyebrow">${club.name}</p>
         <h1>Trakk Attendance</h1>
-        <p class="version-label">v${APP_VERSION} Attendance-first Layout</p>
+        <p class="version-label">v${APP_VERSION} Tabbed Attendance</p>
       </div>
       <div class="data-actions">
         <button class="secondary-button" id="export-backup">Export backup</button>
@@ -636,75 +690,23 @@ function render() {
         <input class="visually-hidden" id="import-backup" type="file" accept="application/json,.json" />
       </div>
     </header>
-
-    <section class="session-card">
-      ${renderClubSelector()}
-      <div class="club-selector-spacer"></div>
-      ${renderSessionSelector()}
-      <div class="session-details">
-        <h2>${session.title}</h2>
-        <p>${session.sessionType} · ${formatSessionDate(session.startDateTime)}</p>
-        <p>${session.location} · Instructor: ${session.instructor} · Capacity: ${session.capacity}</p>
-        <p>${session.notes}</p>
-      </div>
-      <button class="secondary-button danger-button" id="reset-session">Clear this session</button>
-    </section>
-
-    <section class="member-tools-card regulars-card">
-      <div>
-        <p class="eyebrow">Regular attendees</p>
-        <h2>Member check-in</h2>
-        <label class="field-label" for="member-search">Find regular</label>
-        <input id="member-search" type="search" placeholder="Search by name" value="${escapeHtml(memberSearch)}" />
-      </div>
-    </section>
-
-    <section class="member-list">
-      ${getClubMembers()
-        .filter(member => member.memberType !== 'walk-in')
-        .filter(member => formatMemberName(member).toLowerCase().includes(memberSearch.toLowerCase()))
-        .map(renderMemberCard).join('') || '<p class="empty-state">No members match that search.</p>'}
-    </section>
-
-    ${renderNewcomerRows()}
-
-    ${renderScheduleManager(session)}
-
-    <section class="member-tools-card">
-      <p class="eyebrow">Member administration</p>
-      <h2>Add a regular member</h2>
-      <form class="add-member-form" id="add-member-form">
-        <input name="firstName" required placeholder="First name" />
-        <input name="lastName" required placeholder="Last name" />
-        <select name="pricingLabel">${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<option>${escapeHtml(plan.name)}</option>`).join('')}</select>
-        <input name="sessionBalance" type="number" min="0" value="0" aria-label="Session balance" />
-        <button type="submit">Add member</button>
-      </form>
-    </section>
-
-    <section class="statistics-section">
-      <p class="eyebrow">Session results</p>
-      <h2>Attendance statistics</h2>
-      ${renderSummaryCards(summary)}
-    </section>
+    ${renderTabs()}
+    ${activeTab === 'attendance' ? renderAttendanceTab(session, summary) : renderAdminTab(session)}
   `;
 
-  document.querySelector('#session-select').addEventListener('change', event => {
+  document.querySelector('#session-select')?.addEventListener('change', event => {
     state.selectedSessionId = event.target.value;
     saveState();
     render();
   });
-  document.querySelector('#club-select').addEventListener('change', event => {
-    state.selectedClubId = event.target.value;
-    state.selectedSessionId = getClubSessions()[0].id;
-    memberSearch = '';
-    saveState();
+  document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', event => {
+    activeTab = event.currentTarget.dataset.tab;
     render();
-  });
+  }));
 
   document.querySelectorAll('[data-newcomer-form]').forEach(form => form.addEventListener('submit', addWalkIn));
-  document.querySelector('#add-member-form').addEventListener('submit', addMember);
-  document.querySelector('#member-search').addEventListener('input', event => {
+  document.querySelector('#add-member-form')?.addEventListener('submit', addMember);
+  document.querySelector('#member-search')?.addEventListener('input', event => {
     memberSearch = event.target.value;
     render();
     const search = document.querySelector('#member-search');
@@ -713,10 +715,9 @@ function render() {
   });
   document.querySelector('#export-backup').addEventListener('click', exportBackup);
   document.querySelector('#import-backup').addEventListener('change', importBackup);
-  document.querySelector('#reset-session').addEventListener('click', resetSelectedSession);
-  document.querySelector('#session-form').addEventListener('submit', saveSession);
-  document.querySelector('#generate-sessions').addEventListener('click', generateRecurringSessions);
-  document.querySelector('#new-session').addEventListener('click', prepareNewSession);
+  document.querySelector('#session-form')?.addEventListener('submit', saveSession);
+  document.querySelector('#generate-sessions')?.addEventListener('click', generateRecurringSessions);
+  document.querySelector('#new-session')?.addEventListener('click', prepareNewSession);
 
   document.querySelectorAll('[data-action="record"]').forEach(button => {
     button.addEventListener('click', event => {

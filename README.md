@@ -72,3 +72,7 @@ The `feature/recurring-schedules` branch adds shared scheduling infrastructure:
 ### v0.6.0 development
 
 The `feature/attendance-first-layout` branch reorganises the screen for front-door use: session first, regular-member check-in with billing information, a self-renewing newcomer row, session editing, then attendance statistics.
+
+### v0.7.0 development
+
+The `feature/tabbed-attendance-layout` branch locks the UI to one configured company, places the session picker and details in one strip, displays 8–12 attendee cards in a responsive grid, promotes newcomers into the grid with a New badge, and moves member/session administration to a second tab.
