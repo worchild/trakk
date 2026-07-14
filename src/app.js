@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'trakk-state';
 const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.5.0-dev';
+const APP_VERSION = '0.6.0-dev';
 
 const clubs = [
   { id: 'club_gym', name: 'Gym', clubType: 'gym', defaultCurrency: 'AUD', timezone: 'Australia/Adelaide' },
@@ -564,34 +564,43 @@ function prepareNewSession() {
   render();
 }
 
-function renderWalkInForm() {
+function renderNewcomerRows() {
   return `
-    <form class="walk-in-form" id="walk-in-form">
-      <div>
-        <label class="field-label" for="walkInName">Add walk-in</label>
-        <input id="walkInName" name="walkInName" type="text" placeholder="Name" autocomplete="off" />
+    <section class="newcomer-card">
+      <div class="section-heading"><div><p class="eyebrow">New and casual attendees</p><h2>Blank check-in rows</h2></div></div>
+      <div class="newcomer-rows">
+        ${Array.from({ length: 4 }, (_, index) => `
+          <form class="walk-in-form" data-newcomer-form>
+            <span class="row-number">${index + 1}</span>
+            <input name="walkInName" type="text" placeholder="New attendee name" autocomplete="off" aria-label="New attendee ${index + 1} name" />
+            <select name="walkInPayment" aria-label="New attendee ${index + 1} payment type">
+              ${paymentOptions.map(option => `<option value="${option.id}">${option.label}</option>`).join('')}
+            </select>
+            <button type="submit">Add & check in</button>
+          </form>`).join('')}
       </div>
-      <div>
-        <label class="field-label" for="walkInPayment">Type</label>
-        <select id="walkInPayment" name="walkInPayment">
-          ${paymentOptions.map(option => `<option value="${option.id}">${option.label}</option>`).join('')}
-        </select>
-      </div>
-      <button type="submit">Add & check in</button>
-    </form>
+    </section>
   `;
+}
+
+function getBillingSummary(member) {
+  const plan = pricingPlans.find(item => item.clubId === member.clubId && item.name.toLowerCase() === member.pricingLabel.toLowerCase());
+  const balance = member.sessionBalance === null ? 'Subscription active' : `${member.sessionBalance} classes remaining`;
+  if (!plan) return `${member.pricingLabel} · ${balance}`;
+  const price = plan.price === null ? 'Pay at attendance' : `$${plan.price}`;
+  return `${plan.name} · ${price} ${plan.cadence} · ${balance}`;
 }
 
 function renderMemberCard(member) {
   const record = getRecordForMember(member.id);
   const isPresent = Boolean(record);
-  const balanceLabel = member.sessionBalance === null ? 'unlimited' : `${member.sessionBalance} sessions left`;
 
   return `
     <article class="member-card ${isPresent ? 'is-present' : ''}">
       <div class="member-info">
         <h3>${escapeHtml(formatMemberName(member))}</h3>
-        <p>${escapeHtml(member.status)} · ${escapeHtml(member.pricingLabel)} · ${balanceLabel}</p>
+        <p class="billing-info">${escapeHtml(getBillingSummary(member))}</p>
+        <p class="member-status">${escapeHtml(member.status)}</p>
         ${record ? `<p class="record-status">Marked: ${formatPaymentStatus(record.paymentStatus)}</p>` : ''}
       </div>
       <div class="actions">
@@ -620,7 +629,7 @@ function render() {
       <div>
         <p class="eyebrow">${club.name}</p>
         <h1>Trakk Attendance</h1>
-        <p class="version-label">v${APP_VERSION} Shared Scheduling</p>
+        <p class="version-label">v${APP_VERSION} Attendance-first Layout</p>
       </div>
       <div class="data-actions">
         <button class="secondary-button" id="export-backup">Export backup</button>
@@ -628,8 +637,6 @@ function render() {
         <input class="visually-hidden" id="import-backup" type="file" accept="application/json,.json" />
       </div>
     </header>
-
-    ${renderSummaryCards(summary)}
 
     <section class="session-card">
       ${renderClubSelector()}
@@ -644,19 +651,29 @@ function render() {
       <button class="secondary-button danger-button" id="reset-session">Clear this session</button>
     </section>
 
-    ${renderScheduleManager(session)}
-
-    ${renderPricingPlans()}
-
-    <section class="walk-in-card">
-      ${renderWalkInForm()}
-    </section>
-
-    <section class="member-tools-card">
+    <section class="member-tools-card regulars-card">
       <div>
-        <label class="field-label" for="member-search">Find member</label>
+        <p class="eyebrow">Regular attendees</p>
+        <h2>Member check-in</h2>
+        <label class="field-label" for="member-search">Find regular</label>
         <input id="member-search" type="search" placeholder="Search by name" value="${escapeHtml(memberSearch)}" />
       </div>
+    </section>
+
+    <section class="member-list">
+      ${getClubMembers()
+        .filter(member => member.memberType !== 'walk-in')
+        .filter(member => formatMemberName(member).toLowerCase().includes(memberSearch.toLowerCase()))
+        .map(renderMemberCard).join('') || '<p class="empty-state">No members match that search.</p>'}
+    </section>
+
+    ${renderNewcomerRows()}
+
+    ${renderScheduleManager(session)}
+
+    <section class="member-tools-card">
+      <p class="eyebrow">Member administration</p>
+      <h2>Add a regular member</h2>
       <form class="add-member-form" id="add-member-form">
         <input name="firstName" required placeholder="First name" />
         <input name="lastName" required placeholder="Last name" />
@@ -666,10 +683,10 @@ function render() {
       </form>
     </section>
 
-    <section class="member-list">
-      ${getClubMembers()
-        .filter(member => formatMemberName(member).toLowerCase().includes(memberSearch.toLowerCase()))
-        .map(renderMemberCard).join('') || '<p class="empty-state">No members match that search.</p>'}
+    <section class="statistics-section">
+      <p class="eyebrow">Session results</p>
+      <h2>Attendance statistics</h2>
+      ${renderSummaryCards(summary)}
     </section>
   `;
 
@@ -686,7 +703,7 @@ function render() {
     render();
   });
 
-  document.querySelector('#walk-in-form').addEventListener('submit', addWalkIn);
+  document.querySelectorAll('[data-newcomer-form]').forEach(form => form.addEventListener('submit', addWalkIn));
   document.querySelector('#add-member-form').addEventListener('submit', addMember);
   document.querySelector('#member-search').addEventListener('input', event => {
     memberSearch = event.target.value;

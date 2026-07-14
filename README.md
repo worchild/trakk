@@ -68,3 +68,7 @@ The `feature/recurring-schedules` branch adds shared scheduling infrastructure:
 - Creation of one-off sessions
 - Club-specific weekly schedule templates
 - Duplicate-safe generation of the next four weeks of dated sessions
+
+### v0.6.0 development
+
+The `feature/attendance-first-layout` branch reorganises the screen for front-door use: session first, regular-member check-in with billing information, four blank newcomer rows, session editing, then attendance statistics.

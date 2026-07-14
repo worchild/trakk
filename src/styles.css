@@ -87,6 +87,7 @@ h1 {
 .summary-card,
 .session-card,
 .walk-in-card,
+.newcomer-card,
 .member-tools-card,
 .pricing-card,
 .schedule-card,
@@ -139,6 +140,7 @@ h1 {
 
 .session-card,
 .walk-in-card,
+.newcomer-card,
 .member-tools-card,
 .pricing-card,
 .schedule-card {
@@ -212,6 +214,44 @@ h1 {
   gap: 0.65rem;
 }
 
+.regulars-card h2,
+.newcomer-card h2,
+.statistics-section h2 {
+  margin-bottom: 0.75rem;
+}
+
+.member-status {
+  margin-bottom: 0;
+  color: #7b8794;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.billing-info {
+  margin-bottom: 0.25rem;
+  color: #34495e;
+  font-weight: 650;
+}
+
+.newcomer-rows {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.walk-in-form .row-number {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #e5e8e8;
+  font-weight: 800;
+}
+
+.statistics-section {
+  margin-top: 1rem;
+}
+
 .button-label {
   border-radius: 999px;
   padding: 0.7rem 1rem;
@@ -262,7 +302,7 @@ h1 {
 
 .walk-in-form {
   display: grid;
-  grid-template-columns: 1fr 180px auto;
+  grid-template-columns: auto 1fr 180px auto;
   gap: 0.75rem;
   align-items: end;
 }
