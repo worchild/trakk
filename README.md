@@ -92,3 +92,7 @@ The navigation is now Attendance, Members and Sessions. Member administration an
 ### v0.10.1 development
 
 Attendance search now covers every registered member, including migrated legacy records without a club assignment, and can match by name, phone or email. Mobile search remains visible while scrolling through results.
+
+### v0.11.0 release candidate 2
+
+The title header is now club-neutral, while backup and restore controls have moved to the Sessions tab.

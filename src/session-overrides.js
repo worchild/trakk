@@ -1,4 +1,4 @@
-const TRAKK_BUILD_VERSION = '0.11.0-rc.1';
+const TRAKK_BUILD_VERSION = '0.11.0-rc.2';
 const REGULAR_DANCE_TEMPLATE_IDS = new Set(['tpl_dance_mon', 'tpl_dance_shed']);
 const LEGACY_AD_HOC_SESSION_IDS = new Set(['session_002', 'session_003']);
 let membersTabSearch = '';

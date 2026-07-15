@@ -166,6 +166,7 @@ h1 {
 .member-tools-card,
 .pricing-card,
 .schedule-card,
+.backup-tools-card,
 .billing-card,
 .term-card,
 .member-card {
@@ -221,6 +222,7 @@ h1 {
 .member-tools-card,
 .pricing-card,
 .schedule-card,
+.backup-tools-card,
 .billing-card,
 .term-card {
   padding: 1rem;
