@@ -118,6 +118,22 @@ select {
   width: min(300px, 100%);
 }
 
+.attendance-search {
+  width: min(340px, 100%);
+}
+
+.attendance-search input {
+  width: 100%;
+}
+
+.attendance-search span {
+  display: block;
+  margin-top: 0.3rem;
+  color: #5d6d7e;
+  font-size: 0.78rem;
+  text-align: right;
+}
+
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
@@ -652,6 +668,16 @@ h1 {
 
   .attendee-heading input {
     width: 100%;
+  }
+
+  .attendance-search {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 5;
+    width: 100%;
+    padding: 0.45rem;
+    border-radius: 0.9rem;
+    background: #f4f5f7;
   }
 
   .section-heading,
