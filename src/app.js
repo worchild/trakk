@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'trakk-state';
 const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.9.0-dev';
+const APP_VERSION = '0.10.0-dev';
 const APP_CONFIG = {
   activeClubId: 'club_001'
 };
@@ -454,6 +454,10 @@ function addMember(event) {
     pricingLabel: form.elements.pricingLabel.value,
     sessionBalance: Number(form.elements.sessionBalance.value || 0),
     memberType: 'member',
+    phone: form.elements.phone.value.trim(),
+    email: form.elements.email.value.trim(),
+    emergencyContactName: form.elements.emergencyContactName.value.trim(),
+    emergencyContactPhone: form.elements.emergencyContactPhone.value.trim(),
     notes: ''
   });
   saveState();
@@ -623,17 +627,32 @@ function getBillingSummary(member) {
   return `${plan.name} · ${price} ${plan.cadence} · ${balance}`;
 }
 
+function renderContactDetails(member) {
+  return `<div class="contact-control">
+    <button type="button" class="contact-button" data-action="contact" aria-expanded="false">Contact details</button>
+    <div class="contact-popover">
+      <strong>Member</strong>
+      <span>${escapeHtml(member.phone || 'Phone not recorded')}</span>
+      <span>${escapeHtml(member.email || 'Email not recorded')}</span>
+      <strong>Emergency contact</strong>
+      <span>${escapeHtml(member.emergencyContactName || 'Name not recorded')}</span>
+      <span>${escapeHtml(member.emergencyContactPhone || 'Phone not recorded')}</span>
+    </div>
+  </div>`;
+}
+
 function renderMemberCard(member) {
   const record = getRecordForMember(member.id);
   const isPresent = Boolean(record);
 
   return `
-    <article class="member-card ${isPresent ? 'is-present' : ''}">
+    <article class="member-card ${isPresent ? 'is-present' : ''}" data-attendance-card data-member-id="${member.id}" role="button" tabindex="0" aria-pressed="${isPresent}">
       <div class="member-info">
         <h3>${escapeHtml(formatMemberName(member))}${member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
         <p class="billing-info">${escapeHtml(getBillingSummary(member))}</p>
         <p class="member-status">${escapeHtml(member.status)}</p>
         ${record ? `<p class="record-status">Marked: ${formatPaymentStatus(record.paymentStatus)}</p>` : ''}
+        ${renderContactDetails(member)}
       </div>
       <div class="actions">
         <button
@@ -649,8 +668,8 @@ function renderMemberCard(member) {
 function renderTabs() {
   return `<nav class="tabs" aria-label="Trakk sections">
     <button class="tab-button ${activeTab === 'attendance' ? 'active-tab' : ''}" data-tab="attendance">Attendance</button>
-    <button class="tab-button ${activeTab === 'billing' ? 'active-tab' : ''}" data-tab="billing">Billing</button>
-    <button class="tab-button ${activeTab === 'admin' ? 'active-tab' : ''}" data-tab="admin">Admin</button>
+    <button class="tab-button ${activeTab === 'members' ? 'active-tab' : ''}" data-tab="members">Members</button>
+    <button class="tab-button ${activeTab === 'sessions' ? 'active-tab' : ''}" data-tab="sessions">Sessions</button>
   </nav>`;
 }
 
@@ -674,7 +693,25 @@ function getTermAttendanceRows() {
   return [...rows.values()].sort((a, b) => formatMemberName(a.member).localeCompare(formatMemberName(b.member)));
 }
 
-function renderBillingTab(session) {
+function renderMemberAdministration() {
+  return `<section class="member-tools-card">
+    <p class="eyebrow">Member administration</p>
+    <h2>Add a regular member</h2>
+    <form class="add-member-form" id="add-member-form">
+      <input name="firstName" required placeholder="First name" />
+      <input name="lastName" required placeholder="Last name" />
+      <input name="phone" type="tel" placeholder="Phone" />
+      <input name="email" type="email" placeholder="Email" />
+      <input name="emergencyContactName" placeholder="Emergency contact name" />
+      <input name="emergencyContactPhone" type="tel" placeholder="Emergency contact phone" />
+      <select name="pricingLabel">${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<option>${escapeHtml(plan.name)}</option>`).join('')}</select>
+      <input name="sessionBalance" type="number" min="0" value="0" aria-label="Session balance" />
+      <button type="submit">Add member</button>
+    </form>
+  </section>`;
+}
+
+function renderMembersTab() {
   const currentRecords = getAttendanceForSelectedSession();
   const termRows = getTermAttendanceRows();
   return `
@@ -689,10 +726,11 @@ function renderBillingTab(session) {
     </section>
     <section class="term-card">
       <p class="eyebrow">Current term</p><h2>Term attendees and payment details</h2>
-      <div class="term-table-wrap"><table class="term-table"><thead><tr><th>Attendee</th><th>Sessions</th><th>Payment details</th></tr></thead><tbody>
-        ${termRows.map(row => `<tr><td>${escapeHtml(formatMemberName(row.member))}${row.member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</td><td>${row.records.length}</td><td>${row.records.map(record => escapeHtml(formatPaymentStatus(record.paymentStatus))).join(', ')}</td></tr>`).join('') || '<tr><td colspan="3">No term attendance recorded yet.</td></tr>'}
+      <div class="term-table-wrap"><table class="term-table"><thead><tr><th>Attendee</th><th>Sessions</th><th>Payment details</th><th>Contact</th></tr></thead><tbody>
+        ${termRows.map(row => `<tr><td>${escapeHtml(formatMemberName(row.member))}${row.member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</td><td>${row.records.length}</td><td>${row.records.map(record => escapeHtml(formatPaymentStatus(record.paymentStatus))).join(', ')}</td><td>${renderContactDetails(row.member)}</td></tr>`).join('') || '<tr><td colspan="4">No term attendance recorded yet.</td></tr>'}
       </tbody></table></div>
-    </section>`;
+    </section>
+    ${renderMemberAdministration()}`;
 }
 
 function renderSessionStrip(session) {
@@ -726,20 +764,8 @@ function renderAttendanceTab(session, summary) {
     </section>`;
 }
 
-function renderAdminTab(session) {
-  return `
-    ${renderScheduleManager(session)}
-    <section class="member-tools-card">
-      <p class="eyebrow">Member administration</p>
-      <h2>Add a regular member</h2>
-      <form class="add-member-form" id="add-member-form">
-        <input name="firstName" required placeholder="First name" />
-        <input name="lastName" required placeholder="Last name" />
-        <select name="pricingLabel">${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<option>${escapeHtml(plan.name)}</option>`).join('')}</select>
-        <input name="sessionBalance" type="number" min="0" value="0" aria-label="Session balance" />
-        <button type="submit">Add member</button>
-      </form>
-    </section>`;
+function renderSessionsTab(session) {
+  return renderScheduleManager(session);
 }
 
 function render() {
@@ -762,7 +788,7 @@ function render() {
       </div>
     </header>
     ${renderTabs()}
-    ${activeTab === 'attendance' ? renderAttendanceTab(session, summary) : activeTab === 'billing' ? renderBillingTab(session) : renderAdminTab(session)}
+    ${activeTab === 'attendance' ? renderAttendanceTab(session, summary) : activeTab === 'members' ? renderMembersTab() : renderSessionsTab(session)}
   `;
 
   document.querySelector('#session-select')?.addEventListener('change', event => {
@@ -801,11 +827,29 @@ function render() {
     render();
   });
 
-  document.querySelectorAll('[data-action="here"]').forEach(button => {
-    button.addEventListener('click', event => {
-      const memberId = event.currentTarget.dataset.memberId;
+  const toggleAttendance = memberId => {
       if (getRecordForMember(memberId)) removeAttendance(memberId);
       else recordAttendance(memberId, 'pending');
+  };
+
+  document.querySelectorAll('[data-attendance-card]').forEach(card => {
+    card.addEventListener('click', event => {
+      if (event.target.closest('[data-action="contact"]')) return;
+      toggleAttendance(event.currentTarget.dataset.memberId);
+    });
+    card.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      toggleAttendance(event.currentTarget.dataset.memberId);
+    });
+  });
+
+  document.querySelectorAll('[data-action="contact"]').forEach(button => {
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      const popover = event.currentTarget.nextElementSibling;
+      const isOpen = popover.classList.toggle('is-open');
+      event.currentTarget.setAttribute('aria-expanded', String(isOpen));
     });
   });
 
