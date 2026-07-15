@@ -84,3 +84,7 @@ The `feature/checkin-and-billing` branch reduces attendance cards to one green H
 ### v0.9.0 development
 
 The attendance Here button now toggles check-in on and off, newcomers record how they heard about the club, Billing focuses only on charging and term payment details, and Admin provides term-filtered session selection, editing and creation.
+
+### v0.10.0 development
+
+The navigation is now Attendance, Members and Sessions. Member administration and billing share the Members tab, attendee cards are fully clickable for tablet check-in, and contact plus emergency-contact details can be revealed from each member card.
