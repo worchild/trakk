@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'trakk-state';
 const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.10.1-dev';
+const APP_VERSION = '0.11.0-rc.2';
 const APP_CONFIG = {
   activeClubId: 'club_001'
 };
@@ -782,26 +782,29 @@ function renderAttendanceTab(session, summary) {
 }
 
 function renderSessionsTab(session) {
-  return renderScheduleManager(session);
+  return `${renderScheduleManager(session)}
+    <section class="backup-tools-card">
+      <p class="eyebrow">Data management</p>
+      <h2>Backup and restore</h2>
+      <p>Export a copy of all members, sessions and attendance records, or restore a previous Trakk backup.</p>
+      <div class="data-actions">
+        <button class="secondary-button" id="export-backup">Export backup</button>
+        <label class="button-label" for="import-backup">Import backup</label>
+        <input class="visually-hidden" id="import-backup" type="file" accept="application/json,.json" />
+      </div>
+    </section>`;
 }
 
 function render() {
   const app = document.querySelector('#app');
-  const club = getSelectedClub();
   const session = getSelectedSession();
   const summary = getSummary();
 
   app.innerHTML = `
     <header class="app-header">
       <div>
-        <p class="eyebrow">${club.name}</p>
         <h1>Trakk Attendance</h1>
         <p class="version-label">v${APP_VERSION} Tabbed Attendance</p>
-      </div>
-      <div class="data-actions">
-        <button class="secondary-button" id="export-backup">Export backup</button>
-        <label class="button-label" for="import-backup">Import backup</label>
-        <input class="visually-hidden" id="import-backup" type="file" accept="application/json,.json" />
       </div>
     </header>
     ${renderTabs()}
@@ -827,8 +830,8 @@ function render() {
     search.focus();
     search.setSelectionRange(memberSearch.length, memberSearch.length);
   });
-  document.querySelector('#export-backup').addEventListener('click', exportBackup);
-  document.querySelector('#import-backup').addEventListener('change', importBackup);
+  document.querySelector('#export-backup')?.addEventListener('click', exportBackup);
+  document.querySelector('#import-backup')?.addEventListener('change', importBackup);
   document.querySelector('#session-form')?.addEventListener('submit', saveSession);
   document.querySelector('#generate-sessions')?.addEventListener('click', generateRecurringSessions);
   document.querySelector('#new-session')?.addEventListener('click', prepareNewSession);
