@@ -41,13 +41,103 @@ function deleteSelectedSession() {
   render();
 }
 
+function generateRecurringSessions() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let added = 0;
+
+  getClubScheduleTemplates().forEach(template => {
+    const date = new Date(today);
+    const daysAhead = (template.weekday - date.getDay() + 7) % 7;
+    date.setDate(date.getDate() + daysAhead);
+    const datePart = formatLocalDatePart(date);
+    const startDateTime = toIsoDateTime(`${datePart}T${template.startTime}`);
+    const id = `${template.id}_${datePart}`;
+
+    if (state.sessions.some(session => session.id === id)) return;
+
+    state.sessions.push({
+      ...template,
+      id,
+      templateId: template.id,
+      startDateTime,
+      endDateTime: addMinutes(startDateTime, template.durationMinutes),
+      notes: 'Generated from weekly schedule.'
+    });
+    added += 1;
+  });
+
+  saveState();
+  window.alert(added
+    ? `${added} session${added === 1 ? '' : 's'} added for the next week.`
+    : 'The next Monday and Tuesday sessions already exist.');
+  render();
+}
+
+function normaliseSearchText(value) {
+  return String(value || '').trim().toLocaleLowerCase('en-AU');
+}
+
+function applyAttendanceSearch(query) {
+  const searchText = normaliseSearchText(query);
+  let visibleCount = 0;
+
+  document.querySelectorAll('[data-attendance-card]').forEach(card => {
+    const member = state.members.find(item => item.id === card.dataset.memberId);
+    const searchableText = normaliseSearchText([
+      member?.firstName,
+      member?.lastName,
+      member?.phone,
+      member?.email
+    ].filter(Boolean).join(' '));
+    const isMatch = !searchText || searchableText.includes(searchText);
+    card.hidden = !isMatch;
+    if (isMatch) visibleCount += 1;
+  });
+
+  const resultLabel = document.querySelector('.attendance-search span');
+  if (resultLabel) {
+    resultLabel.textContent = searchText
+      ? `${visibleCount} match${visibleCount === 1 ? '' : 'es'}`
+      : `${getClubMembers().length} registered members`;
+  }
+}
+
+function bindMobileSafeAttendanceSearch() {
+  const currentInput = document.querySelector('#member-search');
+  if (!currentInput) return;
+
+  const replacementInput = currentInput.cloneNode(true);
+  currentInput.replaceWith(replacementInput);
+  replacementInput.value = memberSearch;
+
+  replacementInput.addEventListener('input', event => {
+    memberSearch = event.target.value;
+    applyAttendanceSearch(memberSearch);
+  });
+
+  replacementInput.addEventListener('search', event => {
+    memberSearch = event.target.value;
+    applyAttendanceSearch(memberSearch);
+  });
+
+  applyAttendanceSearch(memberSearch);
+}
+
+const baseGetAttendanceMemberMatches = getAttendanceMemberMatches;
+getAttendanceMemberMatches = function getAllAttendanceMembersForClientFiltering() {
+  const members = getClubMembers();
+  return members.length ? members : baseGetAttendanceMemberMatches();
+};
+
 const baseRenderScheduleManager = renderScheduleManager;
 renderScheduleManager = function renderSimplifiedScheduleManager(session) {
   return baseRenderScheduleManager(session)
     .replace(
       /<p class="template-summary">.*?<\/p>/,
-      `<p class="template-summary">Monday Dance Classes and Tuesday Shed are the regular weekly sessions. Create any other session as an ad hoc session.</p>`
+      '<p class="template-summary">Monday Dance Classes and Tuesday Shed are the regular weekly sessions. Add one more week when needed; create anything else as an ad hoc session.</p>'
     )
+    .replace('Generate next 4 weeks', 'Add next week')
     .replace(
       '<button type="button" class="secondary-button" id="new-session">Create new</button>',
       '<button type="button" class="secondary-button" id="new-session">Create ad hoc session</button><button type="button" class="secondary-button" id="delete-session">Delete session</button>'
@@ -55,9 +145,10 @@ renderScheduleManager = function renderSimplifiedScheduleManager(session) {
 };
 
 const baseRender = render;
-render = function renderWithSessionDeletion() {
+render = function renderWithSessionEnhancements() {
   baseRender();
   document.querySelector('#delete-session')?.addEventListener('click', deleteSelectedSession);
+  bindMobileSafeAttendanceSearch();
 };
 
 simplifyDanceSessions();
