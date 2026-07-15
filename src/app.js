@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'trakk-state';
 const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.10.0-dev';
+const APP_VERSION = '0.10.1-dev';
 const APP_CONFIG = {
   activeClubId: 'club_001'
 };
@@ -197,7 +197,10 @@ function loadState() {
       ...createInitialState(),
       ...parsedState,
       selectedClubId: APP_CONFIG.activeClubId,
-      members: mergeById(parsedState.members, initialMembers),
+      members: mergeById(parsedState.members, initialMembers).map(member => ({
+        ...member,
+        clubId: member.clubId || APP_CONFIG.activeClubId
+      })),
       sessions: mergeById(parsedState.sessions, initialSessions),
       scheduleTemplates: mergeById(parsedState.scheduleTemplates, initialScheduleTemplates),
       attendanceRecords: parsedState.attendanceRecords || []
@@ -240,6 +243,17 @@ function getClubSessions() {
 
 function getClubMembers() {
   return state.members.filter(member => member.clubId === state.selectedClubId);
+}
+
+function getAttendanceMemberMatches() {
+  const query = memberSearch.trim().toLowerCase();
+  if (!query) return getClubMembers();
+
+  return getClubMembers().filter(member => [
+    formatMemberName(member),
+    member.phone,
+    member.email
+  ].some(value => String(value || '').toLowerCase().includes(query)));
 }
 
 function getClubScheduleTemplates() {
@@ -745,16 +759,19 @@ function renderSessionStrip(session) {
 }
 
 function renderAttendanceTab(session, summary) {
+  const registeredMembers = getClubMembers();
+  const matchingMembers = getAttendanceMemberMatches();
   return `
     ${renderSessionStrip(session)}
     <section class="attendee-heading">
       <div><p class="eyebrow">Session check-in</p><h2>Attendees</h2></div>
-      <input id="member-search" type="search" placeholder="Find attendee" value="${escapeHtml(memberSearch)}" aria-label="Find attendee" />
+      <div class="attendance-search">
+        <input id="member-search" type="search" placeholder="Search all registered members" value="${escapeHtml(memberSearch)}" aria-label="Search all registered members" />
+        <span>${memberSearch ? `${matchingMembers.length} match${matchingMembers.length === 1 ? '' : 'es'}` : `${registeredMembers.length} registered members`}</span>
+      </div>
     </section>
     <section class="member-list">
-      ${getClubMembers()
-        .filter(member => formatMemberName(member).toLowerCase().includes(memberSearch.toLowerCase()))
-        .map(renderMemberCard).join('') || '<p class="empty-state">No members match that search.</p>'}
+      ${matchingMembers.map(renderMemberCard).join('') || '<p class="empty-state">No registered members match that search.</p>'}
     </section>
     ${renderNewcomerRows()}
     <section class="statistics-section">
