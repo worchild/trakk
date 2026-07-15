@@ -471,6 +471,16 @@ h1 {
   align-items: stretch;
   padding: 1rem;
   border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.member-card:hover,
+.member-card:focus-visible {
+  border-color: #27ae60;
+  box-shadow: 0 14px 32px rgba(30, 132, 73, 0.18);
+  outline: none;
+  transform: translateY(-1px);
 }
 
 .member-card.is-present {
@@ -479,6 +489,43 @@ h1 {
 
 .record-status {
   font-weight: 700;
+}
+
+.contact-button {
+  margin-top: 0.65rem;
+  padding: 0.4rem 0.65rem;
+  background: #e5e8e8;
+  color: #17202a;
+  font-size: 0.78rem;
+}
+
+.contact-popover {
+  display: none;
+  gap: 0.2rem;
+  margin-top: 0.5rem;
+  padding: 0.7rem;
+  border-radius: 0.75rem;
+  background: #17202a;
+  color: #fff;
+  font-size: 0.82rem;
+}
+
+.contact-button:hover + .contact-popover,
+.contact-button:focus + .contact-popover,
+.contact-popover.is-open {
+  display: grid;
+}
+
+.contact-popover strong:not(:first-child) {
+  margin-top: 0.45rem;
+}
+
+.contact-popover span {
+  color: #d5d8dc;
+}
+
+.member-card .here-button {
+  pointer-events: none;
 }
 
 .actions {
