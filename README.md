@@ -88,3 +88,7 @@ The attendance Here button now toggles check-in on and off, newcomers record how
 ### v0.10.0 development
 
 The navigation is now Attendance, Members and Sessions. Member administration and billing share the Members tab, attendee cards are fully clickable for tablet check-in, and contact plus emergency-contact details can be revealed from each member card.
+
+### v0.10.1 development
+
+Attendance search now covers every registered member, including migrated legacy records without a club assignment, and can match by name, phone or email. Mobile search remains visible while scrolling through results.
