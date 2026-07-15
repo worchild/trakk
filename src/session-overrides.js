@@ -1,3 +1,4 @@
+const TRAKK_BUILD_VERSION = '0.10.4-dev';
 const REGULAR_DANCE_TEMPLATE_IDS = new Set(['tpl_dance_mon', 'tpl_dance_shed']);
 const LEGACY_AD_HOC_SESSION_IDS = new Set(['session_002', 'session_003']);
 
@@ -124,6 +125,11 @@ function bindMobileSafeAttendanceSearch() {
   applyAttendanceSearch(memberSearch);
 }
 
+function showCurrentBuild() {
+  const versionLabel = document.querySelector('.version-label');
+  if (versionLabel) versionLabel.textContent = `v${TRAKK_BUILD_VERSION} · Mobile search fix`;
+}
+
 const baseGetAttendanceMemberMatches = getAttendanceMemberMatches;
 getAttendanceMemberMatches = function getAllAttendanceMembersForClientFiltering() {
   const members = getClubMembers();
@@ -149,6 +155,7 @@ render = function renderWithSessionEnhancements() {
   baseRender();
   document.querySelector('#delete-session')?.addEventListener('click', deleteSelectedSession);
   bindMobileSafeAttendanceSearch();
+  showCurrentBuild();
 };
 
 simplifyDanceSessions();
