@@ -302,6 +302,21 @@ h1 {
   margin-top: 1rem;
 }
 
+.session-admin-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.45fr) minmax(260px, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.session-admin-controls label span {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #5d6d7e;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .session-form label span {
   display: block;
   margin-bottom: 0.3rem;
@@ -437,7 +452,7 @@ h1 {
 
 .walk-in-form {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(180px, 1fr) minmax(210px, 0.7fr) auto;
   gap: 0.75rem;
   align-items: end;
 }
@@ -507,6 +522,9 @@ h1 {
 }
 
 @media (max-width: 920px) {
+  .session-admin-controls {
+    grid-template-columns: 1fr;
+  }
   .summary-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -603,3 +621,4 @@ h1 {
     grid-column: auto;
   }
 }
+

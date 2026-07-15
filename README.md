@@ -80,3 +80,7 @@ The `feature/tabbed-attendance-layout` branch locks the UI to one configured com
 ### v0.8.0 development
 
 The `feature/checkin-and-billing` branch reduces attendance cards to one green Here button. Payment classification moves to a dedicated Billing tab, with current-session charging controls and a term attendance ledger showing payment details.
+
+### v0.9.0 development
+
+The attendance Here button now toggles check-in on and off, newcomers record how they heard about the club, Billing focuses only on charging and term payment details, and Admin provides term-filtered session selection, editing and creation.

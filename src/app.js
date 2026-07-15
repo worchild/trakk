@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'trakk-state';
 const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.8.0-dev';
+const APP_VERSION = '0.9.0-dev';
 const APP_CONFIG = {
   activeClubId: 'club_001'
 };
@@ -160,9 +160,12 @@ const paymentOptions = [
   { id: 'staff_volunteer', label: 'Staff' }
 ];
 
+const referralOptions = ['Friend', 'Group ON', 'FaceBook', 'Another dance school', 'Other'];
+
 let state = loadState();
 let memberSearch = '';
 let activeTab = 'attendance';
+let adminTermFilter = 'All terms';
 
 function createInitialState() {
   return {
@@ -243,6 +246,27 @@ function getClubScheduleTemplates() {
   return state.scheduleTemplates.filter(template => template.clubId === state.selectedClubId);
 }
 
+function getDefaultTerm(date = new Date()) {
+  const month = date.getMonth() + 1;
+  const termNumber = month <= 3 ? 1 : month <= 6 ? 2 : month <= 9 ? 3 : 4;
+  return `${date.getFullYear()} Term ${termNumber}`;
+}
+
+function getSessionTerm(session) {
+  return session.term || getDefaultTerm(new Date(session.startDateTime));
+}
+
+function getTermOptions() {
+  const terms = [...new Set(getClubSessions().map(getSessionTerm))].sort();
+  return ['All terms', ...terms];
+}
+
+function getAdminSessions() {
+  return getClubSessions()
+    .filter(session => adminTermFilter === 'All terms' || getSessionTerm(session) === adminTermFilter)
+    .sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+}
+
 function toLocalInputValue(dateTime) {
   const date = new Date(dateTime);
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -274,6 +298,7 @@ function saveSession(event) {
     clubId: state.selectedClubId,
     title: form.elements.title.value.trim(),
     sessionType: form.elements.sessionType.value.trim(),
+    term: form.elements.term.value.trim(),
     startDateTime,
     endDateTime: addMinutes(startDateTime, Number(form.elements.durationMinutes.value)),
     instructor: form.elements.instructor.value.trim(),
@@ -386,8 +411,9 @@ function addWalkIn(event) {
   const form = event.target;
   const nameInput = form.elements.walkInName;
   const name = nameInput.value.trim();
+  const referralSource = form.elements.referralSource.value;
 
-  if (!name) {
+  if (!name || !referralSource) {
     nameInput.focus();
     return;
   }
@@ -402,7 +428,8 @@ function addWalkIn(event) {
     pricingLabel: 'Walk-in',
     sessionBalance: 0,
     memberType: 'walk-in',
-    notes: 'Added during attendance check-in.'
+    referralSource,
+    notes: `Added during attendance check-in. Heard about us: ${referralSource}.`
   };
 
   state.members.push(member);
@@ -522,14 +549,19 @@ function renderScheduleManager(session) {
   return `
     <section class="schedule-card">
       <div class="section-heading">
-        <div><p class="eyebrow">Shared scheduling engine</p><h2>Session editor</h2></div>
+        <div><p class="eyebrow">Term scheduling</p><h2>Session editor</h2></div>
         <button id="generate-sessions" type="button">Generate next 4 weeks</button>
       </div>
       <p class="template-summary">${getClubScheduleTemplates().length} weekly templates configured for ${escapeHtml(getSelectedClub().name)}.</p>
+      <div class="session-admin-controls">
+        <label><span>Term</span><select id="admin-term-filter">${getTermOptions().map(term => `<option ${term === adminTermFilter ? 'selected' : ''}>${escapeHtml(term)}</option>`).join('')}</select></label>
+        <label><span>Session to edit</span><select id="admin-session-select">${getAdminSessions().map(item => `<option value="${item.id}" ${item.id === session.id ? 'selected' : ''}>${escapeHtml(item.title)} — ${formatSessionDate(item.startDateTime)}</option>`).join('')}</select></label>
+      </div>
       <form class="session-form" id="session-form">
         <input type="hidden" name="sessionId" value="${session.id}" />
         <label><span>Title</span><input name="title" required value="${escapeHtml(session.title)}" /></label>
         <label><span>Type</span><input name="sessionType" required value="${escapeHtml(session.sessionType)}" /></label>
+        <label><span>Term</span><input name="term" required value="${escapeHtml(getSessionTerm(session))}" placeholder="2026 Term 3" /></label>
         <label><span>Starts</span><input name="startDateTime" type="datetime-local" required value="${toLocalInputValue(session.startDateTime)}" /></label>
         <label><span>Minutes</span><input name="durationMinutes" type="number" min="15" step="15" required value="${durationMinutes}" /></label>
         <label><span>Instructor</span><input name="instructor" required value="${escapeHtml(session.instructor)}" /></label>
@@ -552,6 +584,7 @@ function prepareNewSession() {
     clubId: state.selectedClubId,
     title: 'New session',
     sessionType: 'Group session',
+    term: adminTermFilter === 'All terms' ? getDefaultTerm(start) : adminTermFilter,
     startDateTime: start.toISOString(),
     endDateTime: addMinutes(start.toISOString(), 60),
     instructor: '',
@@ -570,8 +603,11 @@ function renderNewcomerRows() {
       <div class="section-heading"><div><p class="eyebrow">New and casual attendees</p><h2>Newcomer check-in</h2></div></div>
       <div class="newcomer-rows">
           <form class="walk-in-form" data-newcomer-form>
-            <span class="row-number">+</span>
             <input name="walkInName" type="text" placeholder="New attendee name" autocomplete="off" aria-label="New attendee name" />
+            <select name="referralSource" required aria-label="How did they hear about us?">
+              <option value="" disabled selected>How did they hear about us?</option>
+              ${referralOptions.map(option => `<option value="${option}">${option}</option>`).join('')}
+            </select>
             <button type="submit" class="here-button">Add & Here</button>
           </form>
       </div>
@@ -604,7 +640,6 @@ function renderMemberCard(member) {
           class="here-button ${record ? 'is-here' : ''}"
           data-action="here"
           data-member-id="${member.id}"
-          ${record ? 'disabled' : ''}
         >${record ? 'Here ✓' : 'Here'}</button>
       </div>
     </article>
@@ -643,7 +678,6 @@ function renderBillingTab(session) {
   const currentRecords = getAttendanceForSelectedSession();
   const termRows = getTermAttendanceRows();
   return `
-    ${renderSessionStrip(session)}
     <section class="billing-card">
       <p class="eyebrow">Current session</p><h2>Charging</h2>
       <div class="billing-list">
@@ -694,7 +728,6 @@ function renderAttendanceTab(session, summary) {
 
 function renderAdminTab(session) {
   return `
-    ${renderSessionStrip(session)}
     ${renderScheduleManager(session)}
     <section class="member-tools-card">
       <p class="eyebrow">Member administration</p>
@@ -756,10 +789,23 @@ function render() {
   document.querySelector('#session-form')?.addEventListener('submit', saveSession);
   document.querySelector('#generate-sessions')?.addEventListener('click', generateRecurringSessions);
   document.querySelector('#new-session')?.addEventListener('click', prepareNewSession);
+  document.querySelector('#admin-term-filter')?.addEventListener('change', event => {
+    adminTermFilter = event.target.value;
+    const firstSession = getAdminSessions()[0];
+    if (firstSession) state.selectedSessionId = firstSession.id;
+    render();
+  });
+  document.querySelector('#admin-session-select')?.addEventListener('change', event => {
+    state.selectedSessionId = event.target.value;
+    saveState();
+    render();
+  });
 
   document.querySelectorAll('[data-action="here"]').forEach(button => {
     button.addEventListener('click', event => {
-      recordAttendance(event.currentTarget.dataset.memberId, 'pending');
+      const memberId = event.currentTarget.dataset.memberId;
+      if (getRecordForMember(memberId)) removeAttendance(memberId);
+      else recordAttendance(memberId, 'pending');
     });
   });
 
