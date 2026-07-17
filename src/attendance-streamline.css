@@ -1,0 +1,91 @@
+.streamlined-session-strip {
+  display: block;
+  padding: .7rem;
+}
+
+.streamlined-session-strip .session-picker {
+  width: 100%;
+}
+
+.streamlined-session-strip select {
+  width: 100%;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.streamlined-attendee-heading {
+  align-items: end;
+}
+
+.streamlined-attendee-heading h2 {
+  margin: 0;
+}
+
+.compact-member-card {
+  min-height: 0;
+  padding: .65rem .7rem;
+  gap: .55rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.compact-member-card .member-info {
+  min-width: 0;
+}
+
+.compact-member-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.member-quick-info {
+  display: flex;
+  gap: .55rem;
+  margin: .28rem 0 0;
+  color: #5d6d7e;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.member-quick-info span + span::before {
+  content: '·';
+  margin-right: .55rem;
+}
+
+.compact-here-button {
+  min-width: 3.15rem;
+  min-height: 2rem;
+  padding: .35rem .55rem;
+  border-radius: .6rem;
+  font-size: .78rem;
+  line-height: 1;
+}
+
+.compact-here-button.is-here {
+  min-width: 2rem;
+  font-size: 1rem;
+}
+
+.attendance-register-group[hidden],
+.attendance-member-group[hidden],
+.compact-member-card[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  .streamlined-attendee-heading {
+    align-items: stretch;
+  }
+
+  .compact-member-card {
+    padding: .58rem .62rem;
+  }
+
+  .compact-member-card h3 {
+    font-size: .94rem;
+  }
+
+  .member-quick-info {
+    font-size: .75rem;
+  }
+}
