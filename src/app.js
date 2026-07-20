@@ -1,8 +1,9 @@
-const STORAGE_KEY = 'trakk-state';
-const LEGACY_STORAGE_KEY = 'trakk-v0-2-state';
-const APP_VERSION = '0.11.0-rc.2';
+const TRAKK_BOOTSTRAP = window.TRAKK_BOOTSTRAP || {};
+const STORAGE_KEY = TRAKK_BOOTSTRAP.storageKey || 'trakk-state';
+const LEGACY_STORAGE_KEY = TRAKK_BOOTSTRAP.storageKey ? null : 'trakk-v0-2-state';
+const APP_VERSION = TRAKK_BOOTSTRAP.version || '0.11.0-rc.2';
 const APP_CONFIG = {
-  activeClubId: 'club_001'
+  activeClubId: TRAKK_BOOTSTRAP.activeClubId || 'club_001'
 };
 
 const clubs = [
@@ -22,7 +23,7 @@ const pricingPlans = [
   { id: 'dance_intro', clubId: 'club_001', name: 'Newcomer group intro', price: 30, cadence: 'first 8 classes' }
 ];
 
-const initialMembers = [
+const initialMembers = TRAKK_BOOTSTRAP.members || [
   { id: 'gym_001', clubId: 'club_gym', firstName: 'Chris', lastName: 'Walker', status: 'active', pricingLabel: 'Weekly subscription', sessionBalance: null, memberType: 'member', notes: 'Regular.' },
   { id: 'gym_002', clubId: 'club_gym', firstName: 'Jordan', lastName: 'King', status: 'active', pricingLabel: 'Weekly subscription', sessionBalance: null, memberType: 'member', notes: 'Regular.' },
   { id: 'gym_003', clubId: 'club_gym', firstName: 'Taylor', lastName: 'Mills', status: 'casual', pricingLabel: 'Casual', sessionBalance: 0, memberType: 'member', notes: 'Casual attendee.' },
@@ -94,7 +95,7 @@ const initialMembers = [
   }
 ];
 
-const initialSessions = [
+const initialSessions = TRAKK_BOOTSTRAP.sessions || [
   { id: 'gym_mon_run', clubId: 'club_gym', title: 'Monday Run Training', sessionType: 'Run training', startDateTime: '2026-07-13T18:00:00+09:30', endDateTime: '2026-07-13T19:00:00+09:30', instructor: 'Coach', location: 'Gym', capacity: 30, notes: 'Weekly run training.' },
   { id: 'gym_tue_am', clubId: 'club_gym', title: 'Tuesday AM', sessionType: 'Group training', startDateTime: '2026-07-14T06:00:00+09:30', endDateTime: '2026-07-14T07:00:00+09:30', instructor: 'Coach', location: 'Gym', capacity: 30, notes: 'Regular morning session.' },
   { id: 'gym_tue_pm', clubId: 'club_gym', title: 'Tuesday PM', sessionType: 'Group training', startDateTime: '2026-07-14T18:00:00+09:30', endDateTime: '2026-07-14T19:00:00+09:30', instructor: 'Coach', location: 'Gym', capacity: 30, notes: 'Regular evening session.' },
@@ -170,7 +171,7 @@ let adminTermFilter = 'All terms';
 function createInitialState() {
   return {
     selectedClubId: APP_CONFIG.activeClubId,
-    selectedSessionId: 'session_001',
+    selectedSessionId: TRAKK_BOOTSTRAP.selectedSessionId || initialSessions[0]?.id,
     members: initialMembers,
     sessions: initialSessions,
     scheduleTemplates: initialScheduleTemplates,
@@ -179,7 +180,8 @@ function createInitialState() {
 }
 
 function loadState() {
-  const savedState = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+  const savedState = localStorage.getItem(STORAGE_KEY)
+    || (LEGACY_STORAGE_KEY ? localStorage.getItem(LEGACY_STORAGE_KEY) : null);
 
   if (!savedState) {
     return createInitialState();

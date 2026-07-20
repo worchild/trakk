@@ -1,4 +1,4 @@
-const TRAKK_STREAMLINE_VERSION = '0.11.0-rc.3';
+const TRAKK_STREAMLINE_VERSION = window.TRAKK_BOOTSTRAP?.version || '0.11.0-rc.3';
 const LEARNING_PREFERENCES = ['Lead', 'Follow', 'Both'];
 
 function normaliseLearningPreferences() {
@@ -210,7 +210,7 @@ const baseShowCurrentBuild = showCurrentBuild;
 showCurrentBuild = function showStreamlinedBuild() {
   baseShowCurrentBuild();
   const versionLabel = document.querySelector('.version-label');
-  if (versionLabel) versionLabel.textContent = `v${TRAKK_STREAMLINE_VERSION} · Release candidate`;
+  if (versionLabel) versionLabel.textContent = `v${TRAKK_STREAMLINE_VERSION} · ${window.TRAKK_BOOTSTRAP?.buildLabel || 'Release candidate'}`;
 };
 
 normaliseLearningPreferences();
