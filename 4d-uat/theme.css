@@ -1,0 +1,268 @@
+.four-d-theme {
+  --four-d-yellow: #fff500;
+  --four-d-yellow-soft: #fff86b;
+  --four-d-charcoal: #202124;
+  --four-d-panel: #292b2f;
+  --four-d-panel-raised: #32353a;
+  --four-d-silver: #b7b9bd;
+  --four-d-gold: #a68b48;
+  --four-d-ink: #111214;
+  --four-d-text: #f5f5f2;
+  color: var(--four-d-text);
+  background:
+    linear-gradient(135deg, transparent 0 72%, rgba(166, 139, 72, .12) 72% 72.4%, transparent 72.4%),
+    radial-gradient(circle at 20% 0%, #303236 0, #17181a 42%, #0f1011 100%);
+  font-family: "Trebuchet MS", Inter, system-ui, sans-serif;
+}
+
+.four-d-theme #app {
+  width: min(1180px, 100%);
+}
+
+.four-d-theme .app-header {
+  position: relative;
+  min-height: 5rem;
+  padding: .85rem 1rem .85rem 6rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 245, 0, .42);
+  border-radius: 1.25rem;
+  background: linear-gradient(120deg, #17181a 0%, #292b2f 75%, #1d1e20 100%);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, .28);
+}
+
+.four-d-theme .app-header::before {
+  content: "4D";
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 3px solid var(--four-d-yellow);
+  border-radius: 50%;
+  color: var(--four-d-yellow);
+  font-size: 1.55rem;
+  font-weight: 900;
+  letter-spacing: -.12em;
+  text-shadow: 2px 2px 0 #6d6f73;
+}
+
+.four-d-theme .app-header::after {
+  content: "";
+  position: absolute;
+  right: -3rem;
+  bottom: .8rem;
+  width: 15rem;
+  height: 2px;
+  transform: rotate(-35deg);
+  background: linear-gradient(90deg, transparent, var(--four-d-gold), var(--four-d-yellow-soft));
+}
+
+.four-d-theme h1,
+.four-d-theme h2,
+.four-d-theme h3,
+.four-d-theme strong {
+  color: var(--four-d-text);
+}
+
+.four-d-theme .app-header h1 {
+  margin: 0;
+  color: var(--four-d-yellow);
+  font-size: clamp(1.45rem, 4vw, 2.1rem);
+  letter-spacing: .015em;
+}
+
+.four-d-theme .version-label,
+.four-d-theme .eyebrow,
+.four-d-theme .attendance-search span,
+.four-d-theme .attendance-group-heading span,
+.four-d-theme .member-quick-info,
+.four-d-theme .summary-label,
+.four-d-theme .template-summary,
+.four-d-theme .session-form label span,
+.four-d-theme .session-admin-controls label span,
+.four-d-theme .member-row-main span {
+  color: var(--four-d-silver);
+}
+
+.four-d-theme .eyebrow {
+  color: var(--four-d-yellow);
+}
+
+.four-d-theme .tabs {
+  border: 1px solid rgba(255, 245, 0, .28);
+  background: #191a1c;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .22);
+}
+
+.four-d-theme .tab-button {
+  color: var(--four-d-silver);
+}
+
+.four-d-theme .tab-button.active-tab {
+  background: var(--four-d-yellow);
+  color: var(--four-d-ink);
+  box-shadow: 0 0 0 2px rgba(255, 245, 0, .12), 0 5px 16px rgba(255, 245, 0, .14);
+}
+
+.four-d-theme .summary-card,
+.four-d-theme .session-card,
+.four-d-theme .member-tools-card,
+.four-d-theme .schedule-card,
+.four-d-theme .backup-tools-card,
+.four-d-theme .billing-card,
+.four-d-theme .term-card,
+.four-d-theme .member-card,
+.four-d-theme .member-directory-card,
+.four-d-theme .fatal-error {
+  border: 1px solid rgba(183, 185, 189, .2);
+  background: linear-gradient(145deg, var(--four-d-panel-raised), var(--four-d-panel));
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .24);
+}
+
+.four-d-theme .member-card:hover,
+.four-d-theme .member-admin-row:hover {
+  border-color: rgba(255, 245, 0, .62);
+}
+
+.four-d-theme .member-card.is-present {
+  border-color: #37c871;
+  background: linear-gradient(145deg, #21442f, #183424);
+}
+
+.four-d-theme input,
+.four-d-theme select {
+  border: 1px solid #62656a;
+  background: #f6f6f2;
+  color: var(--four-d-ink);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .08);
+}
+
+.four-d-theme input:focus,
+.four-d-theme select:focus {
+  outline: 3px solid rgba(255, 245, 0, .28);
+  border-color: var(--four-d-yellow);
+}
+
+.four-d-theme button,
+.four-d-theme .button-label {
+  background: var(--four-d-yellow);
+  color: var(--four-d-ink);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, .18);
+}
+
+.four-d-theme button:hover,
+.four-d-theme .button-label:hover {
+  background: var(--four-d-yellow-soft);
+}
+
+.four-d-theme .secondary-button,
+.four-d-theme .contact-button {
+  border: 1px solid rgba(255, 245, 0, .55);
+  background: #35383d;
+  color: var(--four-d-text);
+}
+
+.four-d-theme .secondary-button:hover,
+.four-d-theme .contact-button:hover {
+  background: #44474d;
+}
+
+.four-d-theme .danger-button {
+  border: 1px solid #e46d63;
+  background: #8f2f29;
+  color: #fff;
+}
+
+.four-d-theme .here-button {
+  background: #238b4b;
+  color: #fff;
+}
+
+.four-d-theme .here-button:hover,
+.four-d-theme .here-button.is-here {
+  background: #2eac60;
+}
+
+.four-d-theme .member-admin-row,
+.four-d-theme .billing-row {
+  border-color: rgba(183, 185, 189, .22);
+  background: rgba(17, 18, 20, .25);
+}
+
+.four-d-theme .member-admin-row.is-inactive {
+  background: rgba(17, 18, 20, .5);
+}
+
+.four-d-theme .member-row-main,
+.four-d-theme .member-row-main .member-row-name {
+  color: var(--four-d-text);
+}
+
+.four-d-theme .member-row-main:hover {
+  background: rgba(255, 245, 0, .07);
+}
+
+.four-d-theme .session-form {
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 245, 0, .2);
+}
+
+.four-d-theme .session-form-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: .7rem;
+  padding-top: .25rem;
+}
+
+.four-d-theme .session-save-actions,
+.four-d-theme .session-management-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+}
+
+.four-d-theme .session-save-actions {
+  padding: .75rem;
+  border: 1px solid rgba(255, 245, 0, .38);
+  border-radius: .9rem;
+  background: rgba(255, 245, 0, .06);
+}
+
+.four-d-theme .save-session-button {
+  min-width: 10rem;
+}
+
+.four-d-theme .session-management-actions {
+  justify-content: flex-end;
+}
+
+.four-d-theme .new-badge {
+  background: var(--four-d-yellow);
+  color: var(--four-d-ink);
+}
+
+@media (max-width: 600px) {
+  .four-d-theme .app-header {
+    min-height: 4.5rem;
+    padding-left: 5.1rem;
+  }
+
+  .four-d-theme .app-header::before {
+    width: 3.35rem;
+    height: 3.35rem;
+    font-size: 1.3rem;
+  }
+
+  .four-d-theme .session-save-actions,
+  .four-d-theme .session-management-actions {
+    flex-direction: column;
+  }
+
+  .four-d-theme .session-save-actions button,
+  .four-d-theme .session-management-actions button {
+    width: 100%;
+  }
+}

@@ -805,7 +805,7 @@ function render() {
   app.innerHTML = `
     <header class="app-header">
       <div>
-        <h1>Trakk Attendance</h1>
+        <h1>${escapeHtml(TRAKK_BOOTSTRAP.appTitle || 'Trakk Attendance')}</h1>
         <p class="version-label">v${APP_VERSION} Tabbed Attendance</p>
       </div>
     </header>

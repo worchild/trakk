@@ -8,6 +8,10 @@ function normaliseLearningPreferences() {
       member.learningPreference = 'Both';
       changed = true;
     }
+    if (member.memberType === 'staff' && member.status !== 'inactive' && member.status !== 'staff') {
+      member.status = 'staff';
+      changed = true;
+    }
   });
   if (changed) saveState();
 }
@@ -22,6 +26,7 @@ function formatAttendanceSessionDate(dateTime) {
 }
 
 function getCompactBalance(member) {
+  if (member.status === 'staff') return 'Staff';
   if (member.sessionBalance === null) return 'Active';
   return `${member.sessionBalance || 0} left`;
 }
@@ -57,7 +62,7 @@ renderMemberCard = function renderStreamlinedMemberCard(member) {
   return `
     <article class="member-card compact-member-card ${isPresent ? 'is-present' : ''}" data-attendance-card data-member-id="${member.id}" role="button" tabindex="0" aria-pressed="${isPresent}">
       <div class="member-info">
-        <h3>${escapeHtml(formatMemberName(member))}${member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
+        <h3>${escapeHtml(formatMemberName(member))}${member.status === 'staff' ? '<span class="new-badge">Staff</span>' : member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
         <p class="member-quick-info"><span>${escapeHtml(preference)}</span><span>${escapeHtml(getCompactBalance(member))}</span></p>
       </div>
       <button class="here-button compact-here-button ${record ? 'is-here' : ''}" data-action="here" data-member-id="${member.id}" aria-label="${record ? 'Remove' : 'Mark'} ${escapeHtml(formatMemberName(member))} ${record ? 'from' : 'as'} here">${record ? '✓' : 'Here'}</button>
@@ -67,18 +72,21 @@ renderMemberCard = function renderStreamlinedMemberCard(member) {
 
 function renderSearchRegister(members) {
   return `<section class="attendance-member-group attendance-register-group" data-attendance-group data-search-register hidden>
-    <div class="attendance-group-heading"><h3>Member register</h3><span>All past attendees</span></div>
+    <div class="attendance-group-heading"><h3>Member register</h3><span>Active members and staff</span></div>
     <div class="member-list">${members.map(renderMemberCard).join('')}</div>
   </section>`;
 }
 
 renderRcAttendanceTab = function renderStreamlinedAttendanceTab(session, summary) {
-  const members = getClubMembers();
+  const members = getClubMembers().filter(member => member.status !== 'inactive');
   const present = members.filter(member => getRecordForMember(member.id));
   const presentIds = new Set(present.map(member => member.id));
   const recent = getRecentMemberIds()
     .map(id => members.find(member => member.id === id))
     .filter(member => member && !presentIds.has(member.id));
+  const recentIds = new Set(recent.map(member => member.id));
+  const staff = members.filter(member => member.status === 'staff' && !presentIds.has(member.id) && !recentIds.has(member.id));
+  const available = members.filter(member => member.status !== 'staff' && !presentIds.has(member.id) && !recentIds.has(member.id));
 
   return `${renderSessionStrip(session)}
     ${session.cancelled ? '<div class="rc-alert">Session cancelled. Check-in is disabled.</div>' : ''}
@@ -86,12 +94,14 @@ renderRcAttendanceTab = function renderStreamlinedAttendanceTab(session, summary
       <div><h2>${summary.total} here</h2></div>
       <div class="attendance-search">
         <input id="member-search" type="search" placeholder="Search member register" value="${escapeHtml(memberSearch)}" aria-label="Search member register" />
-        <span>${members.length} members</span>
+        <span>${members.length} selectable</span>
       </div>
     </section>
     <div class="attendance-groups ${session.cancelled ? 'attendance-disabled' : ''}">
       ${renderAttendanceGroup('Here', present, 'Tap to remove')}
       ${renderAttendanceGroup('Recent', recent, 'Likely arrivals')}
+      ${renderAttendanceGroup('Staff', staff, 'Tap to check in')}
+      ${renderAttendanceGroup('Members', available, 'Tap to check in')}
       ${renderSearchRegister(members)}
     </div>
     <section class="statistics-section"><p class="eyebrow">Session</p><h2>Totals</h2>${renderSummaryCards(summary)}</section>`;
@@ -118,7 +128,7 @@ applyAttendanceSearch = function applyMemberRegisterSearch(query) {
   if (resultLabel) {
     resultLabel.textContent = searchText
       ? `${visibleCount} match${visibleCount === 1 ? '' : 'es'}`
-      : `${getClubMembers().length} members`;
+      : `${getClubMembers().filter(member => member.status !== 'inactive').length} selectable`;
   }
 };
 
@@ -159,7 +169,7 @@ renderMemberEditor = function renderPreferenceMemberEditor(member) {
       </select>
       <select name="pricingLabel">${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<option ${plan.name === member?.pricingLabel ? 'selected' : ''}>${escapeHtml(plan.name)}</option>`).join('')}</select>
       <input name="sessionBalance" type="number" min="0" value="${member?.sessionBalance ?? 0}" aria-label="Session balance" />
-      <select name="status"><option value="active" ${member?.status !== 'inactive' ? 'selected' : ''}>Active</option><option value="inactive" ${member?.status === 'inactive' ? 'selected' : ''}>Inactive</option></select>
+      <select name="status"><option value="active" ${member?.status === 'active' ? 'selected' : ''}>Active</option><option value="staff" ${member?.status === 'staff' ? 'selected' : ''}>Staff</option><option value="inactive" ${member?.status === 'inactive' ? 'selected' : ''}>Inactive</option></select>
       <input name="notes" placeholder="Notes" value="${escapeHtml(member?.notes || '')}" />
       <button type="submit">${isEditing ? 'Save member' : 'Add member'}</button>
     </form>
@@ -184,7 +194,7 @@ saveMemberEditor = function savePreferenceMemberEditor(event) {
     sessionBalance: Number(form.elements.sessionBalance.value || 0),
     status: form.elements.status.value,
     notes: form.elements.notes.value.trim(),
-    memberType: existing?.memberType || 'member'
+    memberType: form.elements.status.value === 'staff' ? 'staff' : 'member'
   };
   if (!values.firstName || !values.lastName) return;
   if (existing) Object.assign(existing, values);
