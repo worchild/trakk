@@ -59,12 +59,16 @@ renderSessionStrip = function renderStreamlinedSessionStrip(session) {
 renderMemberCard = function renderStreamlinedMemberCard(member) {
   const record = getRecordForMember(member.id);
   const isPresent = Boolean(record);
+  const chargingSelect = record ? `<select class="tile-charge-select" data-action="charge-select" data-member-id="${member.id}" aria-label="Payment for ${escapeHtml(formatMemberName(member))}">
+    ${paymentOptions.map(option => `<option value="${option.id}" ${option.id === record.paymentStatus ? 'selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
+  </select>` : '';
   return `
     <article class="member-card compact-member-card ${isPresent ? 'is-present' : ''}" data-attendance-card data-member-id="${member.id}" role="button" tabindex="0" aria-pressed="${isPresent}">
       <div class="member-info">
         <h3>${escapeHtml(formatMemberName(member))}${member.pricingLabel === 'Staff / Volunteer' ? '<span class="new-badge">Staff</span>' : member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
         <p class="member-quick-info"><span>${escapeHtml(getCompactBalance(member))}</span></p>
       </div>
+      ${chargingSelect}
       <button class="here-button compact-here-button ${record ? 'is-here' : ''}" data-action="here" data-member-id="${member.id}" aria-label="${record ? 'Remove' : 'Mark'} ${escapeHtml(formatMemberName(member))} ${record ? 'from' : 'as'} here">${record ? '✓' : 'Here'}</button>
     </article>
   `;

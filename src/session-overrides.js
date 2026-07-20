@@ -253,7 +253,7 @@ function renderChargingSection() {
 
 function renderRcMembersTab() {
   const editingMember = state.members.find(member => member.id === editingMemberId);
-  return `${renderMemberDirectory()}${renderMemberEditor(editingMember)}${renderChargingSection()}`;
+  return `${renderMemberEditor(editingMember)}${renderMemberDirectory()}`;
 }
 
 function getRecentMemberIds(limit = 8) {

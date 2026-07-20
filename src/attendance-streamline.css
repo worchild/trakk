@@ -25,7 +25,16 @@
   min-height: 0;
   padding: .65rem .7rem;
   gap: .55rem;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.tile-charge-select {
+  width: 5.8rem;
+  min-height: 1.75rem;
+  padding: .2rem .35rem;
+  border-radius: .55rem;
+  font-size: .72rem;
+  font-weight: 700;
 }
 
 .compact-member-card .member-info {
@@ -79,6 +88,10 @@
 
   .compact-member-card {
     padding: .58rem .62rem;
+  }
+
+  .tile-charge-select {
+    width: 5.2rem;
   }
 
   .compact-member-card h3 {

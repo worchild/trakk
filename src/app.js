@@ -868,7 +868,7 @@ function render() {
 
   document.querySelectorAll('[data-attendance-card]').forEach(card => {
     card.addEventListener('click', event => {
-      if (event.target.closest('[data-action="contact"]')) return;
+      if (event.target.closest('[data-action="contact"], [data-action="charge-select"]')) return;
       toggleAttendance(event.currentTarget.dataset.memberId);
     });
     card.addEventListener('keydown', event => {
@@ -890,6 +890,14 @@ function render() {
   document.querySelectorAll('[data-action="charge"]').forEach(button => {
     button.addEventListener('click', event => {
       recordAttendance(event.currentTarget.dataset.memberId, event.currentTarget.dataset.paymentStatus);
+    });
+  });
+
+  document.querySelectorAll('[data-action="charge-select"]').forEach(select => {
+    select.addEventListener('click', event => event.stopPropagation());
+    select.addEventListener('change', event => {
+      event.stopPropagation();
+      recordAttendance(event.currentTarget.dataset.memberId, event.currentTarget.value);
     });
   });
 

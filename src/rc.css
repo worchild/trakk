@@ -12,7 +12,14 @@
   gap: .75rem;
   margin: 1rem 0;
 }
-.member-admin-list { display: grid; gap: .65rem; }
+.member-admin-list {
+  display: grid;
+  gap: .65rem;
+  max-height: min(48vh, 34rem);
+  overflow-y: auto;
+  padding-right: .35rem;
+  overscroll-behavior: contain;
+}
 .member-admin-row {
   display: grid;
   grid-template-columns: 1fr auto;
