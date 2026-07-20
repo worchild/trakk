@@ -98,12 +98,14 @@
 }
 
 .four-d-theme .tab-button {
+  background: transparent;
   color: var(--four-d-silver);
+  box-shadow: none;
 }
 
 .four-d-theme .tab-button.active-tab {
   background: var(--four-d-yellow);
-  color: var(--four-d-ink);
+  color: var(--four-d-ink) !important;
   box-shadow: 0 0 0 2px rgba(255, 245, 0, .12), 0 5px 16px rgba(255, 245, 0, .14);
 }
 
@@ -124,7 +126,7 @@
 
 .four-d-theme .member-card:hover,
 .four-d-theme .member-admin-row:hover {
-  border-color: rgba(255, 245, 0, .62);
+  border-color: rgba(183, 185, 189, .6);
 }
 
 .four-d-theme .member-card.is-present {
@@ -149,7 +151,7 @@
 .four-d-theme button,
 .four-d-theme .button-label {
   background: var(--four-d-yellow);
-  color: var(--four-d-ink);
+  color: var(--four-d-ink) !important;
   box-shadow: 0 5px 14px rgba(0, 0, 0, .18);
 }
 
@@ -162,7 +164,7 @@
 .four-d-theme .contact-button {
   border: 1px solid rgba(255, 245, 0, .55);
   background: #35383d;
-  color: var(--four-d-text);
+  color: var(--four-d-text) !important;
 }
 
 .four-d-theme .secondary-button:hover,
@@ -173,12 +175,12 @@
 .four-d-theme .danger-button {
   border: 1px solid #e46d63;
   background: #8f2f29;
-  color: #fff;
+  color: #fff !important;
 }
 
 .four-d-theme .here-button {
   background: #238b4b;
-  color: #fff;
+  color: #fff !important;
 }
 
 .four-d-theme .here-button:hover,
@@ -201,8 +203,13 @@
   color: var(--four-d-text);
 }
 
+.four-d-theme .member-row-main {
+  background: transparent;
+  box-shadow: none;
+}
+
 .four-d-theme .member-row-main:hover {
-  background: rgba(255, 245, 0, .07);
+  background: rgba(183, 185, 189, .09);
 }
 
 .four-d-theme .session-form {
@@ -240,8 +247,9 @@
 }
 
 .four-d-theme .new-badge {
-  background: var(--four-d-yellow);
-  color: var(--four-d-ink);
+  border: 1px solid #d8d9db;
+  background: var(--four-d-silver);
+  color: var(--four-d-ink) !important;
 }
 
 @media (max-width: 600px) {
