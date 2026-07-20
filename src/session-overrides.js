@@ -154,7 +154,6 @@ function getFilteredMembers() {
     .filter(member => {
       if (membersStatusFilter === 'all') return true;
       if (membersStatusFilter === 'inactive') return member.status === 'inactive';
-      if (membersStatusFilter === 'staff') return member.status === 'staff';
       return member.status !== 'inactive';
     })
     .filter(member => !query || memberSearchText(member).includes(query))
@@ -165,7 +164,7 @@ function renderMemberListRow(member) {
   const attendance = getMemberAttendance(member.id);
   return `<article class="member-admin-row ${member.status === 'inactive' ? 'is-inactive' : ''}">
     <button type="button" class="member-row-main" data-action="edit-member" data-member-id="${member.id}">
-      <span class="member-row-name">${escapeHtml(formatMemberName(member))}${member.status === 'staff' ? '<span class="new-badge">Staff</span>' : member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</span>
+      <span class="member-row-name">${escapeHtml(formatMemberName(member))}${member.pricingLabel === 'Staff / Volunteer' ? '<span class="new-badge">Staff</span>' : member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</span>
       <span>${escapeHtml(member.pricingLabel || 'No pricing plan')}</span>
       <span>${member.sessionBalance === null ? 'Subscription' : `${member.sessionBalance || 0} remaining`}</span>
       <span>Last: ${escapeHtml(getLastAttendedLabel(member.id))}</span>
@@ -192,7 +191,7 @@ function renderMemberEditor(member) {
       <input name="emergencyContactPhone" type="tel" placeholder="Emergency contact phone" value="${escapeHtml(member?.emergencyContactPhone || '')}" />
       <select name="pricingLabel">${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<option ${plan.name === member?.pricingLabel ? 'selected' : ''}>${escapeHtml(plan.name)}</option>`).join('')}</select>
       <input name="sessionBalance" type="number" min="0" value="${member?.sessionBalance ?? 0}" aria-label="Session balance" />
-      <select name="status"><option value="active" ${member?.status === 'active' ? 'selected' : ''}>Active</option><option value="staff" ${member?.status === 'staff' ? 'selected' : ''}>Staff</option><option value="inactive" ${member?.status === 'inactive' ? 'selected' : ''}>Inactive</option></select>
+      <select name="status"><option value="active" ${member?.status !== 'inactive' ? 'selected' : ''}>Active</option><option value="inactive" ${member?.status === 'inactive' ? 'selected' : ''}>Inactive</option></select>
       <input name="notes" placeholder="Notes" value="${escapeHtml(member?.notes || '')}" />
       <button type="submit">${isEditing ? 'Save member' : 'Add member'}</button>
     </form>
@@ -216,7 +215,7 @@ function saveMemberEditor(event) {
     sessionBalance: Number(form.elements.sessionBalance.value || 0),
     status: form.elements.status.value,
     notes: form.elements.notes.value.trim(),
-    memberType: form.elements.status.value === 'staff' ? 'staff' : 'member'
+    memberType: form.elements.pricingLabel.value === 'Staff / Volunteer' ? 'staff' : 'member'
   };
   if (!values.firstName || !values.lastName) return;
   if (existing) Object.assign(existing, values);
@@ -228,14 +227,14 @@ function saveMemberEditor(event) {
 
 function renderMemberDirectory() {
   const members = getFilteredMembers();
-  const activeCount = getClubMembers().filter(member => member.status === 'active').length;
-  const staffCount = getClubMembers().filter(member => member.status === 'staff').length;
+  const activeCount = getClubMembers().filter(member => member.status !== 'inactive').length;
+  const staffCount = getClubMembers().filter(member => member.status !== 'inactive' && member.pricingLabel === 'Staff / Volunteer').length;
   const inactiveCount = getClubMembers().filter(member => member.status === 'inactive').length;
   return `<section class="member-directory-card">
     <div class="section-heading"><div><p class="eyebrow">Member directory</p><h2>Members</h2></div><span>${activeCount} active · ${staffCount} staff · ${inactiveCount} inactive</span></div>
     <div class="member-directory-controls">
       <input id="members-tab-search" type="search" placeholder="Search name, phone, email or emergency contact" value="${escapeHtml(membersTabSearch)}" />
-      <select id="members-status-filter"><option value="active" ${membersStatusFilter === 'active' ? 'selected' : ''}>Active & staff</option><option value="staff" ${membersStatusFilter === 'staff' ? 'selected' : ''}>Staff</option><option value="inactive" ${membersStatusFilter === 'inactive' ? 'selected' : ''}>Inactive members</option><option value="all" ${membersStatusFilter === 'all' ? 'selected' : ''}>All members</option></select>
+      <select id="members-status-filter"><option value="active" ${membersStatusFilter === 'active' ? 'selected' : ''}>Active members</option><option value="inactive" ${membersStatusFilter === 'inactive' ? 'selected' : ''}>Inactive members</option><option value="all" ${membersStatusFilter === 'all' ? 'selected' : ''}>All members</option></select>
     </div>
     <div class="member-admin-list">${members.map(renderMemberListRow).join('') || '<p class="empty-state">No members match this filter.</p>'}</div>
   </section>`;
@@ -345,7 +344,7 @@ render = function renderWithRcEnhancements() {
     document.querySelectorAll('[data-action="toggle-member-status"]').forEach(button => button.addEventListener('click', event => {
       const member = state.members.find(item => item.id === event.currentTarget.dataset.memberId);
       if (!member) return;
-      member.status = member.status === 'inactive' ? (member.memberType === 'staff' ? 'staff' : 'active') : 'inactive';
+      member.status = member.status === 'inactive' ? 'active' : 'inactive';
       saveState();
       render();
     }));

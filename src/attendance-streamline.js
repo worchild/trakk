@@ -8,8 +8,12 @@ function normaliseLearningPreferences() {
       member.learningPreference = 'Both';
       changed = true;
     }
-    if (member.memberType === 'staff' && member.status !== 'inactive' && member.status !== 'staff') {
-      member.status = 'staff';
+    if (member.status === 'staff') {
+      member.status = 'active';
+      changed = true;
+    }
+    if (member.memberType === 'staff' && member.pricingLabel !== 'Staff / Volunteer') {
+      member.pricingLabel = 'Staff / Volunteer';
       changed = true;
     }
   });
@@ -26,7 +30,7 @@ function formatAttendanceSessionDate(dateTime) {
 }
 
 function getCompactBalance(member) {
-  if (member.status === 'staff') return 'Staff';
+  if (member.pricingLabel === 'Staff / Volunteer') return 'Staff';
   if (member.sessionBalance === null) return 'Active';
   return `${member.sessionBalance || 0} left`;
 }
@@ -62,7 +66,7 @@ renderMemberCard = function renderStreamlinedMemberCard(member) {
   return `
     <article class="member-card compact-member-card ${isPresent ? 'is-present' : ''}" data-attendance-card data-member-id="${member.id}" role="button" tabindex="0" aria-pressed="${isPresent}">
       <div class="member-info">
-        <h3>${escapeHtml(formatMemberName(member))}${member.status === 'staff' ? '<span class="new-badge">Staff</span>' : member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
+        <h3>${escapeHtml(formatMemberName(member))}${member.pricingLabel === 'Staff / Volunteer' ? '<span class="new-badge">Staff</span>' : member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
         <p class="member-quick-info"><span>${escapeHtml(preference)}</span><span>${escapeHtml(getCompactBalance(member))}</span></p>
       </div>
       <button class="here-button compact-here-button ${record ? 'is-here' : ''}" data-action="here" data-member-id="${member.id}" aria-label="${record ? 'Remove' : 'Mark'} ${escapeHtml(formatMemberName(member))} ${record ? 'from' : 'as'} here">${record ? '✓' : 'Here'}</button>
@@ -85,8 +89,8 @@ renderRcAttendanceTab = function renderStreamlinedAttendanceTab(session, summary
     .map(id => members.find(member => member.id === id))
     .filter(member => member && !presentIds.has(member.id));
   const recentIds = new Set(recent.map(member => member.id));
-  const staff = members.filter(member => member.status === 'staff' && !presentIds.has(member.id) && !recentIds.has(member.id));
-  const available = members.filter(member => member.status !== 'staff' && !presentIds.has(member.id) && !recentIds.has(member.id));
+  const staff = members.filter(member => member.pricingLabel === 'Staff / Volunteer' && !presentIds.has(member.id) && !recentIds.has(member.id));
+  const available = members.filter(member => member.pricingLabel !== 'Staff / Volunteer' && !presentIds.has(member.id) && !recentIds.has(member.id));
 
   return `${renderSessionStrip(session)}
     ${session.cancelled ? '<div class="rc-alert">Session cancelled. Check-in is disabled.</div>' : ''}
@@ -169,7 +173,7 @@ renderMemberEditor = function renderPreferenceMemberEditor(member) {
       </select>
       <select name="pricingLabel">${pricingPlans.filter(plan => plan.clubId === state.selectedClubId).map(plan => `<option ${plan.name === member?.pricingLabel ? 'selected' : ''}>${escapeHtml(plan.name)}</option>`).join('')}</select>
       <input name="sessionBalance" type="number" min="0" value="${member?.sessionBalance ?? 0}" aria-label="Session balance" />
-      <select name="status"><option value="active" ${member?.status === 'active' ? 'selected' : ''}>Active</option><option value="staff" ${member?.status === 'staff' ? 'selected' : ''}>Staff</option><option value="inactive" ${member?.status === 'inactive' ? 'selected' : ''}>Inactive</option></select>
+      <select name="status"><option value="active" ${member?.status !== 'inactive' ? 'selected' : ''}>Active</option><option value="inactive" ${member?.status === 'inactive' ? 'selected' : ''}>Inactive</option></select>
       <input name="notes" placeholder="Notes" value="${escapeHtml(member?.notes || '')}" />
       <button type="submit">${isEditing ? 'Save member' : 'Add member'}</button>
     </form>
@@ -194,7 +198,7 @@ saveMemberEditor = function savePreferenceMemberEditor(event) {
     sessionBalance: Number(form.elements.sessionBalance.value || 0),
     status: form.elements.status.value,
     notes: form.elements.notes.value.trim(),
-    memberType: form.elements.status.value === 'staff' ? 'staff' : 'member'
+    memberType: form.elements.pricingLabel.value === 'Staff / Volunteer' ? 'staff' : 'member'
   };
   if (!values.firstName || !values.lastName) return;
   if (existing) Object.assign(existing, values);
