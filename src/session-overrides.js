@@ -152,6 +152,7 @@ function getFilteredMembers() {
   const query = normaliseSearchText(membersTabSearch);
   return getClubMembers()
     .filter(member => {
+      if (query) return true;
       if (membersStatusFilter === 'all') return true;
       if (membersStatusFilter === 'inactive') return member.status === 'inactive';
       return member.status !== 'inactive';

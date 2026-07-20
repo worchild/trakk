@@ -155,7 +155,7 @@ const initialScheduleTemplates = [
 
 const paymentOptions = [
   { id: 'pending', label: 'Pending' },
-  { id: 'paid_casual', label: 'Paid' },
+  { id: 'paid_casual', label: 'Casual' },
   { id: 'pass_used', label: 'Pass' },
   { id: 'free_trial', label: 'Trial' },
   { id: 'complimentary', label: 'Free' },
@@ -863,7 +863,10 @@ function render() {
 
   const toggleAttendance = memberId => {
       if (getRecordForMember(memberId)) removeAttendance(memberId);
-      else recordAttendance(memberId, 'pending');
+      else {
+        const member = state.members.find(item => item.id === memberId);
+        recordAttendance(memberId, getDefaultPaymentStatus(member));
+      }
   };
 
   document.querySelectorAll('[data-attendance-card]').forEach(card => {

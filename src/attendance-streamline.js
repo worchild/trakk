@@ -1,5 +1,14 @@
 const TRAKK_STREAMLINE_VERSION = window.TRAKK_BOOTSTRAP?.version || '0.11.0-rc.3';
 const LEARNING_PREFERENCES = ['Lead', 'Follow', 'Both'];
+const ATTENDANCE_CHARGE_OPTIONS = ['paid_casual', 'pass_used', 'free_trial'];
+
+function getDefaultPaymentStatus(member) {
+  if (!member) return 'paid_casual';
+  if (member.pricingLabel === 'Staff / Volunteer') return 'staff_volunteer';
+  if (member.pricingLabel === 'First class free') return 'free_trial';
+  if (['8 class pass', 'Term pass', 'Groupon newcomer pass'].includes(member.pricingLabel)) return 'pass_used';
+  return 'paid_casual';
+}
 
 function normaliseLearningPreferences() {
   let changed = false;
@@ -16,6 +25,11 @@ function normaliseLearningPreferences() {
       member.pricingLabel = 'Staff / Volunteer';
       changed = true;
     }
+  });
+  state.attendanceRecords.forEach(record => {
+    if (record.paymentStatus !== 'pending') return;
+    record.paymentStatus = getDefaultPaymentStatus(state.members.find(member => member.id === record.memberId));
+    changed = true;
   });
   if (changed) saveState();
 }
@@ -59,14 +73,15 @@ renderSessionStrip = function renderStreamlinedSessionStrip(session) {
 renderMemberCard = function renderStreamlinedMemberCard(member) {
   const record = getRecordForMember(member.id);
   const isPresent = Boolean(record);
-  const chargingSelect = record ? `<select class="tile-charge-select" data-action="charge-select" data-member-id="${member.id}" aria-label="Payment for ${escapeHtml(formatMemberName(member))}">
-    ${paymentOptions.map(option => `<option value="${option.id}" ${option.id === record.paymentStatus ? 'selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
+  const isStaff = member.pricingLabel === 'Staff / Volunteer';
+  const chargingSelect = record && !isStaff ? `<select class="tile-charge-select" data-action="charge-select" data-member-id="${member.id}" aria-label="Payment for ${escapeHtml(formatMemberName(member))}">
+    ${paymentOptions.filter(option => ATTENDANCE_CHARGE_OPTIONS.includes(option.id)).map(option => `<option value="${option.id}" ${option.id === record.paymentStatus ? 'selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
   </select>` : '';
   return `
     <article class="member-card compact-member-card ${isPresent ? 'is-present' : ''}" data-attendance-card data-member-id="${member.id}" role="button" tabindex="0" aria-pressed="${isPresent}">
       <div class="member-info">
-        <h3>${escapeHtml(formatMemberName(member))}${member.pricingLabel === 'Staff / Volunteer' ? '<span class="new-badge">Staff</span>' : member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
-        <p class="member-quick-info"><span>${escapeHtml(getCompactBalance(member))}</span></p>
+        <h3>${escapeHtml(formatMemberName(member))}${isStaff ? '<span class="new-badge">Staff</span>' : member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
+        ${isStaff ? '' : `<p class="member-quick-info"><span>${escapeHtml(getCompactBalance(member))}</span></p>`}
       </div>
       ${chargingSelect}
       <button class="here-button compact-here-button ${record ? 'is-here' : ''}" data-action="here" data-member-id="${member.id}" aria-label="${record ? 'Remove' : 'Mark'} ${escapeHtml(formatMemberName(member))} ${record ? 'from' : 'as'} here">${record ? '✓' : 'Here'}</button>
@@ -76,13 +91,14 @@ renderMemberCard = function renderStreamlinedMemberCard(member) {
 
 function renderSearchRegister(members) {
   return `<section class="attendance-member-group attendance-register-group" data-attendance-group data-search-register hidden>
-    <div class="attendance-group-heading"><h3>Member register</h3><span>Active members and staff</span></div>
+    <div class="attendance-group-heading"><h3>Member register</h3><span>All current and past members</span></div>
     <div class="member-list">${members.map(renderMemberCard).join('')}</div>
   </section>`;
 }
 
 renderRcAttendanceTab = function renderStreamlinedAttendanceTab(session, summary) {
-  const members = getClubMembers().filter(member => member.status !== 'inactive');
+  const allMembers = getClubMembers();
+  const members = allMembers.filter(member => member.status !== 'inactive');
   const present = members.filter(member => getRecordForMember(member.id));
   const presentIds = new Set(present.map(member => member.id));
   const recent = getRecentMemberIds()
@@ -106,7 +122,7 @@ renderRcAttendanceTab = function renderStreamlinedAttendanceTab(session, summary
       ${renderAttendanceGroup('Recent', recent, 'Likely arrivals')}
       ${renderAttendanceGroup('Members', available, 'Tap to check in')}
       ${renderAttendanceGroup('Staff', staff, 'Tap to check in')}
-      ${renderSearchRegister(members)}
+      ${renderSearchRegister(allMembers)}
     </div>
     <section class="statistics-section"><p class="eyebrow">Session</p><h2>Totals</h2>${renderSummaryCards(summary)}</section>`;
 };

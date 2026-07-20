@@ -1,6 +1,6 @@
 window.TRAKK_BOOTSTRAP = {
   "storageKey": "trakk-4d-uat-state-v2",
-  "version": "0.11.0-4d-uat.3.6",
+  "version": "0.11.0-4d-uat.3.7",
   "buildLabel": "4D UAT",
   "appTitle": "4D Dance Trakk",
   "selectedSessionId": "4d_uat_2026_07_20",
