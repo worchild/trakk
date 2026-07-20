@@ -98,14 +98,24 @@
 }
 
 .four-d-theme .tab-button {
-  background: transparent;
-  color: var(--four-d-silver);
+  background: var(--four-d-yellow);
+  color: var(--four-d-ink) !important;
+  opacity: .76;
   box-shadow: none;
+}
+
+.four-d-theme .tab-button:hover {
+  background: var(--four-d-yellow-soft);
+  color: var(--four-d-ink) !important;
+  opacity: 1;
 }
 
 .four-d-theme .tab-button.active-tab {
   background: var(--four-d-yellow);
   color: var(--four-d-ink) !important;
+  opacity: 1;
+  outline: 2px solid var(--four-d-yellow-soft);
+  outline-offset: 2px;
   box-shadow: 0 0 0 2px rgba(255, 245, 0, .12), 0 5px 16px rgba(255, 245, 0, .14);
 }
 
