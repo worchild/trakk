@@ -94,7 +94,6 @@ renderRcAttendanceTab = function renderStreamlinedAttendanceTab(session, summary
       ${renderAttendanceGroup('Recent', recent, 'Likely arrivals')}
       ${renderSearchRegister(members)}
     </div>
-    ${renderNewcomerRows()}
     <section class="statistics-section"><p class="eyebrow">Session</p><h2>Totals</h2>${renderSummaryCards(summary)}</section>`;
 };
 renderAttendanceTab = renderRcAttendanceTab;
