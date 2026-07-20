@@ -59,15 +59,11 @@ renderSessionStrip = function renderStreamlinedSessionStrip(session) {
 renderMemberCard = function renderStreamlinedMemberCard(member) {
   const record = getRecordForMember(member.id);
   const isPresent = Boolean(record);
-  const preference = LEARNING_PREFERENCES.includes(member.learningPreference)
-    ? member.learningPreference
-    : 'Both';
-
   return `
     <article class="member-card compact-member-card ${isPresent ? 'is-present' : ''}" data-attendance-card data-member-id="${member.id}" role="button" tabindex="0" aria-pressed="${isPresent}">
       <div class="member-info">
         <h3>${escapeHtml(formatMemberName(member))}${member.pricingLabel === 'Staff / Volunteer' ? '<span class="new-badge">Staff</span>' : member.memberType === 'walk-in' ? '<span class="new-badge">New</span>' : ''}</h3>
-        <p class="member-quick-info"><span>${escapeHtml(preference)}</span><span>${escapeHtml(getCompactBalance(member))}</span></p>
+        <p class="member-quick-info"><span>${escapeHtml(getCompactBalance(member))}</span></p>
       </div>
       <button class="here-button compact-here-button ${record ? 'is-here' : ''}" data-action="here" data-member-id="${member.id}" aria-label="${record ? 'Remove' : 'Mark'} ${escapeHtml(formatMemberName(member))} ${record ? 'from' : 'as'} here">${record ? '✓' : 'Here'}</button>
     </article>
@@ -104,8 +100,8 @@ renderRcAttendanceTab = function renderStreamlinedAttendanceTab(session, summary
     <div class="attendance-groups ${session.cancelled ? 'attendance-disabled' : ''}">
       ${renderAttendanceGroup('Here', present, 'Tap to remove')}
       ${renderAttendanceGroup('Recent', recent, 'Likely arrivals')}
-      ${renderAttendanceGroup('Staff', staff, 'Tap to check in')}
       ${renderAttendanceGroup('Members', available, 'Tap to check in')}
+      ${renderAttendanceGroup('Staff', staff, 'Tap to check in')}
       ${renderSearchRegister(members)}
     </div>
     <section class="statistics-section"><p class="eyebrow">Session</p><h2>Totals</h2>${renderSummaryCards(summary)}</section>`;

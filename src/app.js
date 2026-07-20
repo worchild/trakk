@@ -20,7 +20,8 @@ const pricingPlans = [
   { id: 'dance_term', clubId: 'club_001', name: 'Term pass', price: 80, cadence: '8 consecutive weeks' },
   { id: 'dance_private_one', clubId: 'club_001', name: 'Private lesson — one teacher', price: 80, cadence: 'per hour' },
   { id: 'dance_private_two', clubId: 'club_001', name: 'Private lesson — two teachers', price: 120, cadence: 'per hour' },
-  { id: 'dance_intro', clubId: 'club_001', name: 'Newcomer group intro', price: 30, cadence: 'first 8 classes' },
+  { id: 'dance_first_free', clubId: 'club_001', name: 'First class free', price: 0, cadence: 'new members only' },
+  { id: 'dance_groupon', clubId: 'club_001', name: 'Groupon newcomer pass', price: 30, cadence: '8 classes · new members only' },
   { id: 'dance_staff', clubId: 'club_001', name: 'Staff / Volunteer', price: 0, cadence: 'per class' }
 ];
 
@@ -196,13 +197,23 @@ function loadState() {
       ...defaults.filter(defaultItem => !saved.some(savedItem => savedItem.id === defaultItem.id))
     ];
 
+    const pricingLabelMigrations = {
+      '8 Class Pass': '8 class pass',
+      'Term Pass': 'Term pass',
+      'Free lesson': 'First class free',
+      'Groupon': 'Groupon newcomer pass',
+      'Newcomer group intro': 'Groupon newcomer pass',
+      'Party': 'Single class'
+    };
+
     return {
       ...createInitialState(),
       ...parsedState,
       selectedClubId: APP_CONFIG.activeClubId,
       members: mergeById(parsedState.members, initialMembers).map(member => ({
         ...member,
-        clubId: member.clubId || APP_CONFIG.activeClubId
+        clubId: member.clubId || APP_CONFIG.activeClubId,
+        pricingLabel: pricingLabelMigrations[member.pricingLabel] || member.pricingLabel
       })),
       sessions: mergeById(parsedState.sessions, initialSessions),
       scheduleTemplates: mergeById(parsedState.scheduleTemplates, initialScheduleTemplates),
